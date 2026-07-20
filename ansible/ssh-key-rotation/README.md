@@ -10,7 +10,8 @@ Retirement runs only when all of these conditions pass:
 2. The replacement is present beside the current key on every selected host.
 3. `rotation.operator_verified` is `true` after a login test from the key's owner device.
 4. The command includes the exact phrase `RETIRE <identity-id>`.
-5. Every selected host completes its precheck. An unreachable host keeps the removal gate closed.
+5. The requested targets equal the identity's full allowlist; retirement cannot use a narrower host or group selector.
+6. Every allowlisted host completes its precheck. An unreachable host keeps the removal gate closed.
 
 The removal task matches the key algorithm and base64 material, not its comment. Shared key stores have one writable host and one or more verification-only hosts. An identity that targets a verification-only host must also target its declared writer.
 

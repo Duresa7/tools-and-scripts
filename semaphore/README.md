@@ -3,7 +3,7 @@
 `semaphore_sqlite.py` contains two operations for Semaphore installations that use SQLite:
 
 - `backup` uses SQLite's online backup API, refuses to overwrite a file, checks source and destination integrity, sets the destination to mode `0600`, and removes an incomplete destination.
-- `compare` checks database integrity, compares non-secret project structure, and compares digests of encrypted access-key and environment payload rows. It prints counts and booleans, not credential values or hashes.
+- `compare` checks database integrity, compares non-secret table columns and rows, includes template-to-environment links, and compares digests of encrypted access-key and environment payload rows. It prints counts and booleans, not credential values or hashes.
 
 Stop Semaphore before restoring a backup. A verified online backup is safe to create while Semaphore is running, but replacing its live database is a separate maintenance action.
 

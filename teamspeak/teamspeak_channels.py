@@ -12,6 +12,7 @@ import sys
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 ESCAPES = {
@@ -148,7 +149,9 @@ class TS3Connection:
             if not data:
                 raise ConnectionError("query endpoint closed while sending its banner")
 
-    def command(self, command: str, operation: str) -> list[dict[str, str | bool]]:
+    def command(
+        self, command: str, operation: str, *, sensitive: bool = False
+    ) -> list[dict[str, str | bool]]:
         self._socket.sendall((command + "\n").encode("utf-8"))
         records: list[dict[str, str | bool]] = []
         while True:
@@ -166,7 +169,7 @@ class TS3Connection:
                         operation,
                         error_id,
                         str(error.get("msg", "")),
-                        str(error.get("extra_msg", "")),
+                        "" if sensitive else str(error.get("extra_msg", "")),
                     )
                 return records
             records.extend(parse_record(piece) for piece in text.split("|"))
@@ -292,7 +295,9 @@ def export_channels(
 ) -> tuple[list[dict[str, str | bool]], str]:
     with TS3Connection(host, port, timeout=timeout) as connection:
         connection.command(
-            f"auth apikey={ts3_escape(api_key)}", "ClientQuery authentication"
+            f"auth apikey={ts3_escape(api_key)}",
+            "ClientQuery authentication",
+            sensitive=True,
         )
         handlers = connection.command(
             "serverconnectionhandlerlist", "listing connected server tabs"
@@ -339,10 +344,36 @@ def export_channels(
 def write_export(path: Path, channels: list[dict[str, Any]], force: bool) -> None:
     if not path.parent.is_dir():
         raise FileNotFoundError(f"output directory does not exist: {path.parent}")
-    mode = "w" if force else "x"
-    with path.open(mode, encoding="utf-8", newline="\n") as handle:
-        json.dump(channels, handle, indent=2, ensure_ascii=False)
-        handle.write("\n")
+    if path.exists() and not force:
+        raise FileExistsError(f"output already exists: {path}")
+
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="\n",
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            dir=path.parent,
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            os.chmod(temporary_path, 0o600)
+            json.dump(channels, handle, indent=2, ensure_ascii=False)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        if force:
+            os.replace(temporary_path, path)
+        else:
+            os.link(temporary_path, path)
+            temporary_path.unlink()
+        temporary_path = None
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
 
 
 def import_channels(
@@ -368,6 +399,7 @@ def import_channels(
             f"client_login_name={ts3_escape(username)} "
             f"client_login_password={ts3_escape(password)}",
             "ServerQuery authentication",
+            sensitive=True,
         )
         connection.command(f"use sid={server_id}", "selecting the target server")
         connection.command("whoami", "reading target server identity")

@@ -1,5 +1,8 @@
 # Tools and Scripts
 
+[![CI](https://github.com/Duresa7/tools-and-scripts/actions/workflows/ci.yml/badge.svg)](https://github.com/Duresa7/tools-and-scripts/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Reusable utilities pulled from maintenance jobs and failure recovery. Each one accepts environment-neutral inputs, avoids command-line secrets, fails with useful exit codes, and runs under automated checks.
 
 ## Contents
@@ -57,14 +60,17 @@ Windows PowerShell activation uses `.venv\Scripts\Activate.ps1`.
 
 ## Development checks
 
-The local test commands check Python formatting, lint rules, and unit tests.
+The local commands cover the Python, Bash, and project-level checks used in CI. CI also scans the full Git history with Gitleaks. Ansible syntax and lint checks require a Linux or macOS controller with the collections installed from `ansible/ssh-key-rotation/requirements.yml`.
 
 ```bash
 ruff check .
 ruff format --check .
 pytest
 bash -n networkmanager/networkmanager-ifupdown-cutover.sh
+shellcheck networkmanager/networkmanager-ifupdown-cutover.sh
 python ansible/ssh-key-rotation/tests/validate_project.py
+cd ansible/ssh-key-rotation
+ansible-lint --offline
 ```
 
 ## License

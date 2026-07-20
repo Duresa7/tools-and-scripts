@@ -15,7 +15,7 @@ python teamspeak/teamspeak_channels.py export --output channels.json
 unset TS3_CLIENTQUERY_API_KEY
 ```
 
-Use `--handler-id` when several server tabs are open. The default ClientQuery endpoint is `127.0.0.1:25639`. The exporter refuses to overwrite an existing JSON file unless `--force` is present.
+Use `--handler-id` when several server tabs are open. The default ClientQuery endpoint is `127.0.0.1:25639`. The exporter writes through a temporary file, syncs it before atomic installation, sets mode `0600`, and refuses to replace an existing JSON file unless `--force` is present.
 
 ## Preview the import
 

@@ -9,6 +9,7 @@ import hmac
 import json
 import os
 import sqlite3
+import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -74,6 +75,7 @@ SAFE_COLUMNS: dict[str, tuple[str, ...]] = {
         "source_storage_key",
         "source_storage_type",
     ),
+    "project__template_environment": ("template_id", "environment_id"),
 }
 
 SECRET_QUERIES: dict[str, str] = {
@@ -138,7 +140,9 @@ def table_names(connection: sqlite3.Connection) -> set[str]:
     }
 
 
-def safe_snapshot(connection: sqlite3.Connection) -> dict[str, list[tuple[Any, ...]]]:
+def safe_snapshot(
+    connection: sqlite3.Connection,
+) -> dict[str, tuple[tuple[str, ...], list[tuple[Any, ...]]]]:
     """Read structural columns that do not contain credential payloads."""
 
     available_tables = table_names(connection)
@@ -148,16 +152,20 @@ def safe_snapshot(connection: sqlite3.Connection) -> dict[str, list[tuple[Any, .
             f"unsupported Semaphore schema; missing tables: {missing_tables}"
         )
 
-    snapshot: dict[str, list[tuple[Any, ...]]] = {}
+    snapshot: dict[str, tuple[tuple[str, ...], list[tuple[Any, ...]]]] = {}
     for table, columns in SAFE_COLUMNS.items():
         available_columns = {
             str(row[1]) for row in connection.execute(f"PRAGMA table_info({table})")
         }
         selected = tuple(column for column in columns if column in available_columns)
-        if "id" not in selected:
-            raise ValueError(f"unsupported Semaphore schema; {table}.id is missing")
-        query = f"SELECT {', '.join(selected)} FROM {table} ORDER BY id"
-        snapshot[table] = [tuple(row) for row in connection.execute(query)]
+        if not selected:
+            raise ValueError(
+                f"unsupported Semaphore schema; {table} has no safe columns"
+            )
+        order_by = ", ".join(selected)
+        query = f"SELECT {order_by} FROM {table} ORDER BY {order_by}"
+        rows = [tuple(row) for row in connection.execute(query)]
+        snapshot[table] = (selected, rows)
     return snapshot
 
 
@@ -255,16 +263,7 @@ def compare_databases(
         live_integrity = integrity_result(live)
         live_snapshot = safe_snapshot(live)
         live_secrets = secret_digests(live)
-        live_tables = table_names(live)
-        template_links = (
-            int(
-                live.execute(
-                    "SELECT count(*) FROM project__template_environment"
-                ).fetchone()[0]
-            )
-            if "project__template_environment" in live_tables
-            else None
-        )
+        template_links = len(live_snapshot["project__template_environment"][1])
 
     with connect_read_only(backup_path) as backup:
         backup_integrity = integrity_result(backup)
@@ -275,8 +274,8 @@ def compare_databases(
         digest.rows > 0 for digest in live_secrets.values()
     )
     counts = {
-        table: len(rows)
-        for table, rows in live_snapshot.items()
+        table: len(snapshot[1])
+        for table, snapshot in live_snapshot.items()
         if table in {"access_key", "project", "project__template", "project__view"}
     }
     return ComparisonReport(
@@ -330,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
             require_secret_records=args.require_secret_records,
         )
     except (OSError, RuntimeError, sqlite3.Error, TypeError, ValueError) as exc:
-        print(f"operation-error: {exc}")
+        print(f"operation-error: {exc}", file=sys.stderr)
         return 1
 
     print(f"live-sqlite-integrity={report.live_integrity}")

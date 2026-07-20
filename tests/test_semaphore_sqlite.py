@@ -84,3 +84,34 @@ def test_secret_change_is_compared_without_exposing_value(tmp_path: Path) -> Non
     assert not report.matches
     assert report.structure_matches
     assert not report.secret_sets_match
+
+
+def test_empty_table_schema_change_is_detected(tmp_path: Path) -> None:
+    live = tmp_path / "live.sqlite"
+    backup = tmp_path / "backup.sqlite"
+    create_database(live)
+    backup_database(live, backup)
+
+    with sqlite3.connect(live) as connection:
+        connection.execute("ALTER TABLE project__inventory ADD COLUMN runner_tag TEXT")
+
+    report = compare_databases(live, backup)
+
+    assert not report.matches
+    assert not report.structure_matches
+
+
+def test_template_environment_link_change_is_detected(tmp_path: Path) -> None:
+    live = tmp_path / "live.sqlite"
+    backup = tmp_path / "backup.sqlite"
+    create_database(live)
+    backup_database(live, backup)
+
+    with sqlite3.connect(live) as connection:
+        connection.execute("DELETE FROM project__template_environment")
+
+    report = compare_databases(live, backup)
+
+    assert not report.matches
+    assert not report.structure_matches
+    assert report.template_environment_links == 0

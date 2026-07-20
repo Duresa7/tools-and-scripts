@@ -1,7 +1,13 @@
+import os
+import stat
+from io import BytesIO
+from pathlib import Path
+
 import pytest
 
 from teamspeak.teamspeak_channels import (
     QueryError,
+    TS3Connection,
     channelcreate_command,
     credential,
     normalize_channels,
@@ -9,6 +15,7 @@ from teamspeak.teamspeak_channels import (
     parse_record,
     ts3_escape,
     ts3_unescape,
+    write_export,
 )
 
 
@@ -75,9 +82,60 @@ def test_query_error_does_not_store_secret_command() -> None:
     assert "password" not in str(error)
 
 
+def test_sensitive_query_omits_server_supplied_detail() -> None:
+    class SocketStub:
+        def sendall(self, _data: bytes) -> None:
+            return None
+
+    connection = object.__new__(TS3Connection)
+    connection._socket = SocketStub()
+    connection._reader = BytesIO(
+        b"error id=520 msg=invalid\\slogin extra_msg=echoed-secret\n"
+    )
+
+    with pytest.raises(QueryError) as captured:
+        connection.command(
+            "login client_login_password=echoed-secret",
+            "ServerQuery authentication",
+            sensitive=True,
+        )
+
+    assert "echoed-secret" not in str(captured.value)
+
+
 def test_credential_reads_named_environment_variable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("TS3_TEST_SECRET", "value")
 
     assert credential("TS3_TEST_SECRET", "Secret: ") == "value"
+
+
+def test_export_refuses_to_replace_an_existing_file(tmp_path: Path) -> None:
+    output = tmp_path / "channels.json"
+    output.write_text("keep", encoding="utf-8")
+
+    with pytest.raises(FileExistsError, match="already exists"):
+        write_export(output, [{"cid": "1"}], force=False)
+
+    assert output.read_text(encoding="utf-8") == "keep"
+
+
+def test_export_creates_a_private_file_without_temp_artifacts(tmp_path: Path) -> None:
+    output = tmp_path / "channels.json"
+
+    write_export(output, [{"cid": "1"}], force=False)
+
+    assert output.read_text(encoding="utf-8") == '[\n  {\n    "cid": "1"\n  }\n]\n'
+    assert list(tmp_path.iterdir()) == [output]
+    if os.name == "posix":
+        assert stat.S_IMODE(output.stat().st_mode) == 0o600
+
+
+def test_forced_export_replaces_the_file_atomically(tmp_path: Path) -> None:
+    output = tmp_path / "channels.json"
+    output.write_text("old", encoding="utf-8")
+
+    write_export(output, [{"cid": "1"}], force=True)
+
+    assert output.read_text(encoding="utf-8") == '[\n  {\n    "cid": "1"\n  }\n]\n'

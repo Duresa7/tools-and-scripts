@@ -115,6 +115,13 @@
           - ssh_requested_target_hosts | difference(ssh_identity_definition.target_hosts) | length == 0
         fail_msg: Every requested host must be unique and present in the identity allowlist.
 
+    - name: Require the full identity allowlist for retirement
+      ansible.builtin.assert:
+        that:
+          - ssh_requested_target_hosts | sort == ssh_identity_definition.target_hosts | sort
+        fail_msg: Retirement must precheck the identity's complete target allowlist.
+      when: ssh_operation == 'retire'
+
     - name: Save the selected target list
       ansible.builtin.set_fact:
         ssh_selected_target_hosts: "{{ ssh_requested_target_hosts }}"

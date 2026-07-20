@@ -7,19 +7,27 @@
     script: |
       [CmdletBinding(SupportsShouldProcess)]
       param([string]$Path, [string]$PublicKey)
+      function Get-KeyMaterial {
+        param([string]$Line)
+        $parts = @($Line.Trim() -split '\s+')
+        for ($index = 0; $index -lt ($parts.Count - 1); $index++) {
+          if ($parts[$index] -match '^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521))$') {
+            return $parts[$index] + ' ' + $parts[$index + 1]
+          }
+        }
+        return $null
+      }
       if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         $Ansible.Changed = $false
         $Ansible.Result = @{ removed = 0 }
         return
       }
-      $targetParts = @($PublicKey.Trim() -split '\s+')
-      if ($targetParts.Count -lt 2) { throw 'Invalid public key' }
-      $targetMaterial = $targetParts[0] + ' ' + $targetParts[1]
+      $targetMaterial = Get-KeyMaterial -Line $PublicKey
+      if (-not $targetMaterial) { throw 'Invalid public key' }
       $kept = @()
       $removed = 0
       foreach ($line in (Get-Content -LiteralPath $Path -ErrorAction Stop)) {
-        $parts = @($line.Trim() -split '\s+')
-        if ($parts.Count -ge 2 -and (($parts[0] + ' ' + $parts[1]) -eq $targetMaterial)) {
+        if ((Get-KeyMaterial -Line $line) -eq $targetMaterial) {
           $removed += 1
         } else {
           $kept += $line
