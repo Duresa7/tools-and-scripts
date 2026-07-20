@@ -478,25 +478,76 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # CUSTOMIZE: Connection details and credential environment-variable names
+    # are options so users can adapt the tool without editing this source file.
     export = subparsers.add_parser("export", help="Export through ClientQuery")
-    export.add_argument("--host", default="127.0.0.1")
-    export.add_argument("--port", type=int, default=25639)
-    export.add_argument("--output", type=Path, default=Path("channels.json"))
-    export.add_argument("--handler-id", type=int)
-    export.add_argument("--api-key-env", default="TS3_CLIENTQUERY_API_KEY")
-    export.add_argument("--force", action="store_true")
-    export.add_argument("--timeout", type=float, default=10.0)
+    export.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="ClientQuery host; change only when the desktop client is remote",
+    )
+    export.add_argument(
+        "--port", type=int, default=25639, help="ClientQuery plugin port"
+    )
+    export.add_argument(
+        "--output",
+        type=Path,
+        default=Path("channels.json"),
+        help="new export path (default: channels.json)",
+    )
+    export.add_argument(
+        "--handler-id",
+        type=int,
+        help="source server-tab handler ID; needed only with multiple open tabs",
+    )
+    export.add_argument(
+        "--api-key-env",
+        default="TS3_CLIENTQUERY_API_KEY",
+        help="environment variable containing your ClientQuery API key",
+    )
+    export.add_argument(
+        "--force", action="store_true", help="replace an existing export file"
+    )
+    export.add_argument(
+        "--timeout", type=float, default=10.0, help="query timeout in seconds"
+    )
 
     importer = subparsers.add_parser("import", help="Import through ServerQuery")
-    importer.add_argument("--input", type=Path, required=True)
-    importer.add_argument("--host", default="127.0.0.1")
-    importer.add_argument("--port", type=int, default=10011)
-    importer.add_argument("--server-id", type=int, default=1)
-    importer.add_argument("--username", default="serveradmin")
-    importer.add_argument("--password-env", default="TS3_SERVERQUERY_PASSWORD")
-    importer.add_argument("--dry-run", action="store_true")
-    importer.add_argument("--skip-existing", action="store_true")
-    importer.add_argument("--timeout", type=float, default=10.0)
+    importer.add_argument(
+        "--input", type=Path, required=True, help="channel export JSON to import"
+    )
+    importer.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="target ServerQuery host or IP address",
+    )
+    importer.add_argument(
+        "--port", type=int, default=10011, help="target ServerQuery TCP port"
+    )
+    importer.add_argument(
+        "--server-id", type=int, default=1, help="target TeamSpeak virtual server ID"
+    )
+    importer.add_argument(
+        "--username", default="serveradmin", help="target ServerQuery username"
+    )
+    importer.add_argument(
+        "--password-env",
+        default="TS3_SERVERQUERY_PASSWORD",
+        help="environment variable containing your ServerQuery password",
+    )
+    importer.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="validate the export without connecting to the target",
+    )
+    importer.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="reuse same-name target channels instead of failing",
+    )
+    importer.add_argument(
+        "--timeout", type=float, default=10.0, help="query timeout in seconds"
+    )
     return parser
 
 

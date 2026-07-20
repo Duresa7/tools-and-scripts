@@ -15,6 +15,10 @@ Retirement runs only when all of these conditions pass:
 
 The removal task matches the key algorithm and base64 material, not its comment. Shared key stores have one writable host and one or more verification-only hosts. An identity that targets a verification-only host must also target its declared writer.
 
+## What you must customize
+
+Copy `inventory/hosts.yml.example` to the ignored local file `inventory/hosts.yml`, then follow its `CUSTOMIZE:` comments. Replace the example inventory aliases, documentation addresses, SSH users, and authorized-key paths. Copy the identity template and supply its identifier, display name, public-key fingerprint, complete public key, and exact inventory allowlist. Do not edit the playbooks to add local hosts or key material.
+
 ## Prepare the project
 
 Install the pinned collections:
@@ -24,7 +28,13 @@ cd ansible/ssh-key-rotation
 ansible-galaxy collection install --requirements-file requirements.yml
 ```
 
-Replace the documentation hosts in `inventory/hosts.yml` with your systems. Keep unverified systems under `ssh_key_unknown`; the playbooks cannot select that group.
+Create your local inventory, then replace its documentation hosts with your systems:
+
+```bash
+cp inventory/hosts.yml.example inventory/hosts.yml
+```
+
+The copied `hosts.yml` is ignored by Git, so pulls cannot overwrite your inventory. Keep unverified systems under `ssh_key_unknown`; the playbooks cannot select that group.
 
 Copy the identity template and add only public information:
 

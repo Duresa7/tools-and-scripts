@@ -1,13 +1,23 @@
 ---
-# Copy this file to identities/<identity-id>.yml and replace every example value.
+# CUSTOMIZE: Copy this file to identities/<identity-id>.yml and replace every
+# example value. The file name and id must use the same lowercase identifier.
 # Only a public key belongs here. Never paste a private key.
 ssh_identity:
+  # CUSTOMIZE: Use the identity file name without the .yml extension.
   id: admin-laptop
+  # CUSTOMIZE: Choose a label that tells you which person or device owns the key.
   display_name: Admin Laptop
+  # CUSTOMIZE: Run `ssh-keygen -lf <public-key-file>` and copy its SHA256 value.
   fingerprint: SHA256:REPLACE_WITH_PUBLIC_KEY_FINGERPRINT
+  # CUSTOMIZE: Paste the complete public-key line. Never paste the private key.
   current_public_key: ssh-ed25519 REPLACE_WITH_PUBLIC_KEY_DATA admin-laptop
+  # CUSTOMIZE: List exact host aliases from inventory/hosts.yml. The playbooks
+  # reject any target that is not in this identity-specific allowlist.
   target_hosts:
     - linux-example
   rotation:
+    # CUSTOMIZE: During rotation, leave empty until a new key is ready to stage.
     replacement_public_key: ''
+    # CUSTOMIZE: After testing, set true only when the replacement login works
+    # from its owner device to every target in target_hosts.
     operator_verified: false

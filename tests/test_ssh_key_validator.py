@@ -47,7 +47,9 @@ def test_collect_hosts_applies_inherited_variables() -> None:
 
 
 def test_checked_in_project_passes_validation() -> None:
-    assert VALIDATOR.validate_project(VALIDATOR_PATH.parents[1]) == []
+    assert (
+        VALIDATOR.validate_project(VALIDATOR_PATH.parents[1], "hosts.yml.example") == []
+    )
 
 
 def test_identity_requires_the_writer_for_a_shared_key_store(tmp_path: Path) -> None:

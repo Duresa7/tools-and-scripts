@@ -5,6 +5,9 @@ export LC_ALL=C
 
 readonly interfaces_file=/etc/network/interfaces
 
+# CUSTOMIZE: Supply site-specific interface, connection, address, gateway, and
+# candidate-file values through the required command-line flags below. Do not
+# hardcode them here; keeping them empty makes accidental reuse fail safely.
 interface=''
 connection_name=''
 candidate_file=''
@@ -37,6 +40,17 @@ The candidate file must be a complete replacement for /etc/network/interfaces.
 It must not define the selected interface, including through source directives.
 The NetworkManager connection profile must already exist and target the selected
 interface. A live cutover requires --confirm and root privileges.
+
+Required values to replace for your system:
+  --interface       Linux device name, such as ens18 or enp1s0
+  --connection      Existing NetworkManager connection profile name
+  --candidate       Complete replacement file for /etc/network/interfaces
+  --expect-ipv4     Exact post-cutover address and prefix, such as 192.0.2.10/24
+  --expect-gateway  Exact post-cutover default gateway address
+
+Optional environment-specific values:
+  --dns-probe       Hostname that must resolve after cutover (deb.debian.org)
+  --timeout         Seconds to wait for the expected state (30)
 EOF
 }
 

@@ -18,4 +18,4 @@ channels.json
 *.backup
 
 ansible/ssh-key-rotation/identities/*.yml
-ansible/ssh-key-rotation/inventory/hosts.local.yml
+ansible/ssh-key-rotation/inventory/hosts.yml

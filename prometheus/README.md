@@ -2,6 +2,14 @@
 
 `check_targets.py` compares the live Prometheus active-target response with a JSON expectation file. It detects missing targets, unexpected targets, duplicate active targets, stale address fragments, and targets outside the required health state.
 
+## What you must customize
+
+Copy `expected-targets.example.json` to `expected-targets.json` and follow its `_comment` fields. Replace the job names and scrape URLs with the exact values shown by your Prometheus `/api/v1/targets` endpoint. Add every target you expect, remove the examples, list any retired address fragments under `forbidden_substrings`, and normally leave `required_health` set to `up`. You do not need to edit `check_targets.py`.
+
+```bash
+cp prometheus/expected-targets.example.json prometheus/expected-targets.json
+```
+
 ## Usage
 
 Pipe a local Prometheus response into the checker:
@@ -9,7 +17,7 @@ Pipe a local Prometheus response into the checker:
 ```bash
 curl -fsS http://127.0.0.1:9090/api/v1/targets \
   | python prometheus/check_targets.py \
-      --expect prometheus/expected-targets.example.json
+      --expect prometheus/expected-targets.json
 ```
 
 The script can fetch the API itself:
@@ -17,10 +25,10 @@ The script can fetch the API itself:
 ```bash
 python prometheus/check_targets.py \
   --url http://127.0.0.1:9090/api/v1/targets \
-  --expect prometheus/expected-targets.example.json
+  --expect prometheus/expected-targets.json
 ```
 
-Copy `expected-targets.example.json` and replace the documentation addresses with the exact jobs and scrape URLs from your Prometheus configuration. Repeated job names are supported when their scrape URLs differ.
+Repeated job names are supported when their scrape URLs differ.
 
 ## Exit codes
 

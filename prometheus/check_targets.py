@@ -184,7 +184,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Prometheus targets API URL, such as http://127.0.0.1:9090/api/v1/targets",
     )
     parser.add_argument(
-        "--expect", required=True, type=Path, help="Expectation JSON file"
+        "--expect",
+        required=True,
+        type=Path,
+        help=(
+            "copy expected-targets.example.json, replace its jobs and URLs, "
+            "then pass that file here"
+        ),
     )
     parser.add_argument(
         "--timeout", type=float, default=10.0, help="HTTP timeout in seconds"

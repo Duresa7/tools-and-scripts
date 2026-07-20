@@ -7,6 +7,10 @@
 
 Stop Semaphore before restoring a backup. A verified online backup is safe to create while Semaphore is running, but replacing its live database is a separate maintenance action.
 
+## What you must customize
+
+This tool has no configuration file and no hardcoded installation path. Pass your live Semaphore SQLite path and your chosen backup path as command arguments. The destination directory must already exist and the backup file must not exist. After a Semaphore upgrade, test against a fresh backup before relying on comparisons because upstream table names can change.
+
 ## Create a backup
 
 Create the destination directory first, then choose a destination file that does not exist:

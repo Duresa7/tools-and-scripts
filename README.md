@@ -8,6 +8,7 @@ Reusable utilities pulled from maintenance jobs and failure recovery. Each one a
 ## Contents
 
 - [Tools](#tools)
+- [Customization](#customization)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
 - [Safety](#safety)
@@ -25,6 +26,15 @@ Reusable utilities pulled from maintenance jobs and failure recovery. Each one a
 | [SSH key rotation](ansible/ssh-key-rotation/README.md) | Audit, stage, verify, and retire SSH public keys across POSIX and Windows hosts with an allowlist and an explicit retirement gate | Ansible Core 2.17+ |
 
 Each directory contains its own prerequisites, examples, exit behavior, and rollback notes. Example networks use the documentation ranges reserved by RFC 5737.
+
+## Customization
+
+The executable files contain no deployment-specific addresses, usernames, paths, or credentials. Adapt them through command-line options, environment variables, and copied example files instead of editing operational logic.
+
+- Search example YAML and shell files for `CUSTOMIZE:` comments. Each marker explains which value you must supply and where to obtain it.
+- JSON does not support comments, so the Prometheus example uses ignored `_comment` fields while remaining valid JSON.
+- Copy example files before editing them. This keeps the repository examples available for reference and prevents a pull from overwriting your local configuration.
+- Run each command with `--help`. The Python tools describe which paths, endpoints, account names, and environment variables belong to your setup.
 
 ## Requirements
 

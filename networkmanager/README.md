@@ -4,6 +4,10 @@
 
 Run this from a local console, hypervisor console, or another out-of-band path. An incorrect profile or address can interrupt SSH before the rollback finishes.
 
+## What you must customize
+
+Do not edit addresses or interface names into the script. Supply your Linux interface name, existing NetworkManager profile, candidate interfaces file, expected IPv4 address with prefix, and expected gateway through the required flags. If the default DNS probe is unsuitable, pass a hostname your resolver should answer with `--dns-probe`. Run the script with `--help` for the full input list, then use `--dry-run` before `--confirm`.
+
 ## Prepare the replacement file
 
 The script does not edit network stanzas. Create a complete candidate file yourself so its final contents can be reviewed before the interface goes down. This example leaves only loopback under ifupdown:

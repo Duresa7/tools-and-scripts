@@ -69,6 +69,8 @@ jobs:
       - run: shellcheck networkmanager/networkmanager-ifupdown-cutover.sh
       - run: bash -n networkmanager/networkmanager-ifupdown-cutover.sh
       - run: ansible-galaxy collection install --requirements-file ansible/ssh-key-rotation/requirements.yml
+      - name: Prepare example Ansible inventory
+        run: cp ansible/ssh-key-rotation/inventory/hosts.yml.example ansible/ssh-key-rotation/inventory/hosts.yml
       - run: python ansible/ssh-key-rotation/tests/validate_project.py
       - name: Lint the Ansible project
         working-directory: ansible/ssh-key-rotation

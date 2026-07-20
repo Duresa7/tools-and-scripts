@@ -296,14 +296,26 @@ def build_parser() -> argparse.ArgumentParser:
     backup = subparsers.add_parser(
         "backup", help="Create an online backup and verify both databases"
     )
-    backup.add_argument("source", type=Path)
-    backup.add_argument("destination", type=Path)
+    # CUSTOMIZE: Database locations are positional inputs so deployments never
+    # need to edit or hardcode a local Semaphore path in this script.
+    backup.add_argument(
+        "source", type=Path, help="path to your live Semaphore SQLite database"
+    )
+    backup.add_argument(
+        "destination",
+        type=Path,
+        help="new backup file to create; the path must not already exist",
+    )
 
     compare = subparsers.add_parser(
         "compare", help="Compare live state with a pre-change backup"
     )
-    compare.add_argument("live_database", type=Path)
-    compare.add_argument("backup_database", type=Path)
+    compare.add_argument(
+        "live_database", type=Path, help="path to your current live database"
+    )
+    compare.add_argument(
+        "backup_database", type=Path, help="path to the pre-change backup"
+    )
     compare.add_argument(
         "--require-secret-records",
         action="store_true",

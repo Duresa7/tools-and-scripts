@@ -207,9 +207,11 @@ def validate_identity(
     return identity_id
 
 
-def validate_project(root: Path = ROOT) -> list[str]:
+def validate_project(
+    root: Path = ROOT, inventory_filename: str = "hosts.yml"
+) -> list[str]:
     errors: list[str] = []
-    inventory_path = root / "inventory" / "hosts.yml"
+    inventory_path = root / "inventory" / inventory_filename
     try:
         inventory = yaml.safe_load(inventory_path.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:

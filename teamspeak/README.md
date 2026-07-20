@@ -4,6 +4,10 @@
 
 The export includes channel names, hierarchy, topics, descriptions, codecs, limits, flags, phonetic names, and banner settings. TeamSpeak does not expose channel passwords in a reversible form, so the importer cannot copy them. Custom icon files also need a separate migration.
 
+## What you must customize
+
+For export, the default `127.0.0.1:25639` works when ClientQuery runs in the desktop client on the same machine. Change `--host`, `--port`, or `--handler-id` only when your client layout differs. For import, supply your target ServerQuery host, port, virtual server ID, and username. Put credentials in the documented environment variables or let the hidden prompt ask for them. Do not paste credentials into this source file or a command argument. Run each subcommand with `--help` to see every input.
+
 ## Export through ClientQuery
 
 Enable the ClientQuery plugin in the TeamSpeak 3 desktop client, connect to the source server, and read the API key from the plugin settings. Put the key in an environment variable so it does not enter shell history or the process list:
