@@ -10,6 +10,7 @@ MARKER_COUNTS = {
     "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 7,
     "networking/networkmanager-cutover/config.example.conf": 10,
     "monitoring/prometheus-target-check/config.example.json": 10,
+    "backup-and-recovery/semaphore-sqlite-guard/config.example.toml": 4,
 }
 
 HELP_CASES = (
@@ -21,7 +22,7 @@ HELP_CASES = (
     (
         "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
         ("backup", "--help"),
-        ("your live Semaphore SQLite database", "must not already exist"),
+        ("overrides database_path", "must not exist"),
     ),
     (
         "migrations/teamspeak-channel-migration/teamspeak_channels.py",

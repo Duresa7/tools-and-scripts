@@ -1,0 +1,9 @@
+[semaphore]
+# CUSTOMIZE: Set the live Semaphore SQLite database path.
+database_path = "/var/lib/semaphore/database.sqlite"
+# CUSTOMIZE: Set a private directory where new backup files will be created.
+backup_directory = "/home/example/semaphore-backups"
+# CUSTOMIZE: Keep {timestamp} exactly once and change only the surrounding filename text.
+filename_template = "semaphore-{timestamp}.sqlite"
+# CUSTOMIZE: Set true when both expected secret-bearing tables must contain records.
+require_secret_records = false

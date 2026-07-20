@@ -1,36 +1,140 @@
 # Semaphore SQLite guard
 
-`semaphore_sqlite.py` contains two operations for Semaphore installations that use SQLite:
+Create an online backup of a Semaphore SQLite database, verify both databases, and compare pre-change state without printing stored credentials or their hashes.
 
-- `backup` uses SQLite's online backup API, refuses to overwrite a file, checks source and destination integrity, sets the destination to mode `0600`, and removes an incomplete destination.
-- `compare` checks database integrity, compares non-secret table columns and rows, includes template-to-environment links, and compares digests of encrypted access-key and environment payload rows. It prints counts and booleans, not credential values or hashes.
+## Contents
 
-Stop Semaphore before restoring a backup. A verified online backup is safe to create while Semaphore is running, but replacing its live database is a separate maintenance action.
+- [Use case](#use-case)
+- [Prerequisites](#prerequisites)
+- [Guided setup](#guided-setup)
+- [Manual setup](#manual-setup)
+- [Inputs](#inputs)
+- [Permissions](#permissions)
+- [Dry run](#dry-run)
+- [Changes made](#changes-made)
+- [Safeguard reasoning](#safeguard-reasoning)
+- [Rollback](#rollback)
+- [Troubleshooting](#troubleshooting)
+- [Exit behavior](#exit-behavior)
 
-## What you must customize
+## Use case
 
-This tool has no configuration file and no hardcoded installation path. Pass your live Semaphore SQLite path and your chosen backup path as command arguments. The destination directory must already exist and the backup file must not exist. After a Semaphore upgrade, test against a fresh backup before relying on comparisons because upstream table names can change.
+Use `backup` before a Semaphore upgrade, migration, or database-affecting maintenance task. Use `compare` after the change to check SQLite integrity, non-secret project structure, template-to-environment links, and digests of encrypted secret-bearing records.
 
-## Create a backup
+The tool runs on Linux, macOS, and Windows with Python 3.11 or newer. It uses SQLite's online backup API, so Semaphore can remain running while the backup is created. Stop Semaphore before replacing its live database during a restore.
 
-Create the destination directory first, then choose a destination file that does not exist:
+## Prerequisites
+
+- Python 3.11 or newer.
+- Read access to the live database and its SQLite sidecar files.
+- Write access to an existing backup directory.
+- `whoami.exe` and `icacls.exe` on Windows.
+- A fresh trial backup after a Semaphore upgrade because upstream table and column names can change.
+
+## Guided setup
+
+The configurator checks `SEMAPHORE_DB_PATH`, `/var/lib/semaphore/database.sqlite`, `$HOME/.semaphore/database.sqlite`, the current directory, and a Windows ProgramData path. It doesn't open the database or contact another system.
+
+Bash:
 
 ```bash
-install -d -m 0700 /root/semaphore-backups/pre-upgrade
-python backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py backup \
-  /var/lib/semaphore/database.sqlite \
-  /root/semaphore-backups/pre-upgrade/database.sqlite
+TOOL_DIR="$HOME/tools-and-scripts/backup-and-recovery/semaphore-sqlite-guard"
+python "$TOOL_DIR/configure.py" --database /var/lib/semaphore/database.sqlite
 ```
 
-## Compare state after a change
+PowerShell:
+
+```powershell
+$ToolDir = Join-Path $HOME 'tools-and-scripts/backup-and-recovery/semaphore-sqlite-guard'
+$DatabasePath = 'C:\ProgramData\Semaphore\database.sqlite'
+py (Join-Path $ToolDir 'configure.py') --database $DatabasePath
+```
+
+The configurator writes ignored `config.local.toml` and refuses to replace an existing file.
+
+## Manual setup
+
+Bash:
 
 ```bash
-python backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py compare \
-  /var/lib/semaphore/database.sqlite \
-  /root/semaphore-backups/pre-upgrade/database.sqlite \
-  --require-secret-records
+TOOL_DIR="$HOME/tools-and-scripts/backup-and-recovery/semaphore-sqlite-guard"
+CONFIG_PATH="$TOOL_DIR/config.local.toml"
+cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
+${EDITOR:-vi} "$CONFIG_PATH"
 ```
 
-The comparison returns `0` when integrity, structure, and secret digests match. It returns `1` for an input, schema, or SQLite error and `2` for a completed comparison that found a change.
+PowerShell:
 
-The selected columns match Semaphore's project, environment, inventory, repository, template, view, and access-key tables. Test the script against a backup after a Semaphore schema upgrade because upstream table names can change between releases.
+```powershell
+$ConfigPath = Join-Path $ToolDir 'config.local.toml'
+Copy-Item (Join-Path $ToolDir 'config.example.toml') $ConfigPath
+notepad $ConfigPath
+```
+
+Replace every `CUSTOMIZE:` value. Relative paths are resolved from the directory containing the TOML file.
+
+## Inputs
+
+`[semaphore]` contains four settings: `database_path`, `backup_directory`, `filename_template`, and `require_secret_records`. The filename template must contain `{timestamp}` once; a backup created at 14:05:09 UTC on 2026-07-20 uses `20260720T140509Z`.
+
+Explicit paths keep the original interface and override local config:
+
+```bash
+DATABASE_PATH="/var/lib/semaphore/database.sqlite"
+BACKUP_PATH="$HOME/semaphore-backups/pre-upgrade.sqlite"
+python "$TOOL_DIR/semaphore_sqlite.py" backup "$DATABASE_PATH" "$BACKUP_PATH"
+python "$TOOL_DIR/semaphore_sqlite.py" compare "$DATABASE_PATH" "$BACKUP_PATH"
+```
+
+With config, omit the source and generated destination:
+
+```bash
+python "$TOOL_DIR/semaphore_sqlite.py" --config "$CONFIG_PATH" backup
+python "$TOOL_DIR/semaphore_sqlite.py" --config "$CONFIG_PATH" compare "$BACKUP_PATH"
+```
+
+Use `--require-secret-records` or `--allow-empty-secret-records` to override the comparison policy.
+
+## Permissions
+
+Run as an ordinary account that can read the database. Grant only the access needed for that file or run this command with elevation if the service account's database isn't readable. The backup directory should belong to the account running the command.
+
+POSIX backups receive mode `0600`. Windows backups have inherited access removed and grant full control only to the current user SID and SYSTEM. A permission failure removes the empty or incomplete destination.
+
+## Dry run
+
+`backup --dry-run` checks source integrity, calculates the UTC timestamped destination, and rejects an existing destination without creating a file:
+
+```bash
+python "$TOOL_DIR/semaphore_sqlite.py" --config "$CONFIG_PATH" backup --dry-run
+```
+
+`compare` is read-only and can be run before maintenance to confirm a backup is readable.
+
+## Changes made
+
+`backup` creates one new file. It never replaces a destination or writes to the live database. `compare` changes no files. The configurator creates only the requested local TOML file.
+
+## Safeguard reasoning
+
+Exclusive file creation prevents an old backup from being overwritten. Permissions are restricted before SQLite writes any page into the destination. Source and destination integrity checks bracket the online backup. Comparisons select an allowlist of non-secret columns and use constant-time digest comparison for encrypted payloads; output includes booleans and record counts, not credential values or digests.
+
+## Rollback
+
+The live database is never modified, so backup failure needs no database rollback. The tool deletes a destination it created when backup, integrity, or permission handling fails. Keep a verified backup outside the live database directory before maintenance.
+
+Restoring is a separate operation: stop Semaphore, preserve the failed live database, copy the selected backup into place with the service account's ownership and permissions, start Semaphore, and run application-level checks.
+
+## Troubleshooting
+
+- `destination already exists`: choose a new path or let the timestamp template generate one.
+- `source database integrity check failed`: stop maintenance and diagnose the live SQLite file.
+- `unsupported Semaphore schema`: test against the installed Semaphore version and update the safe-column map before relying on comparison.
+- `icacls.exe could not restrict`: run under an account allowed to edit the destination ACL.
+- `safe-structure-unchanged=false`: inspect the maintenance change before restoring or accepting it.
+
+## Exit behavior
+
+- `0`: dry run passed, backup and integrity checks passed, or comparison matched the selected policy.
+- `1`: invalid config or path, existing destination, permission failure, SQLite error, integrity failure, or unsupported schema.
+- `2`: comparison completed but structure, secret digests, integrity, or required-record policy did not match.
