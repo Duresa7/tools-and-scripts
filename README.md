@@ -15,6 +15,7 @@ Reusable utilities pulled from maintenance jobs and failure recovery. Each one a
 
 | Tool | Purpose | Runtime |
 |---|---|---|
+| [NetworkManager cutover](networkmanager/README.md) | Move a Debian interface from ifupdown to a prepared NetworkManager profile, verify address, route, and DNS, then restore the original file if a check fails | Bash, Debian networking tools |
 | [Prometheus target check](prometheus/README.md) | Compare the Prometheus active-target API with an expected target set and reject stale addresses or unhealthy scrapes | Python 3.11+ |
 | [Semaphore SQLite guard](semaphore/README.md) | Create an online SQLite backup and compare secret-safe Semaphore structure before and after a change | Python 3.11+ |
 | [TeamSpeak channel migration](teamspeak/README.md) | Export a channel tree through ClientQuery and recreate it through ServerQuery without putting credentials in command arguments | Python 3.11+ |
@@ -24,6 +25,7 @@ Each directory contains its own prerequisites, examples, exit behavior, and roll
 ## Requirements
 
 - Python 3.11 or newer for the Python tools.
+- Bash 4 or newer plus Debian's ifupdown, NetworkManager, iproute2, and standard system tools for the NetworkManager cutover.
 - The Python unit tests run on Linux, macOS, and Windows.
 
 The scripts use the Python standard library. The development requirements provide the test runner and formatter.
@@ -47,6 +49,7 @@ Windows PowerShell activation uses `.venv\Scripts\Activate.ps1`.
 
 - The repository contains no private keys, passwords, tokens, or live identity files.
 - TeamSpeak credentials come from environment variables or a hidden terminal prompt. Query errors never include the command that carried a credential.
+- The NetworkManager script requires an explicit confirmation flag, keeps a timestamped copy of `/etc/network/interfaces`, and restores it when validation fails. Run it from a console or another out-of-band path because changing network ownership can interrupt SSH.
 - TeamSpeak exports can contain private channel names, topics, and descriptions. Review the JSON file before sharing it.
 
 ## Development checks
@@ -57,6 +60,7 @@ The local test commands check Python formatting, lint rules, and unit tests.
 ruff check .
 ruff format --check .
 pytest
+bash -n networkmanager/networkmanager-ifupdown-cutover.sh
 ```
 
 ## License
