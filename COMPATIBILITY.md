@@ -1,6 +1,6 @@
 # Compatibility validation
 
-This repository has passed local automated checks. It has not passed the required live operating-system matrix. Every live result below remains `Pending`, and the branch stays local until dedicated targets are available.
+This repository has passed local automated checks. It has not passed the required live operating-system matrix. Every live result below remains `Pending`, so publication does not constitute an operating-system compatibility claim.
 
 ## Contents
 
@@ -75,6 +75,6 @@ Use documentation addresses such as `192.0.2.10` when a sanitized note needs an 
 
 ## Release gate
 
-The release gate is closed. The branch must not be pushed to `main`, and the repository must not claim live compatibility, until every required target and scenario has a sanitized passing record above.
+The live compatibility gate is closed. No target may be marked supported until every required scenario for that target has a sanitized passing record above.
 
 A failed scenario stays failed until its cause is fixed and the same scenario passes on a fresh dedicated target. Results from active services, partially reused targets, or tests that omit rollback don't satisfy this gate.
