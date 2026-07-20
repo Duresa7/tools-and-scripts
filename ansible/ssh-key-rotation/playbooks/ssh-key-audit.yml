@@ -1,0 +1,26 @@
+---
+- name: Load the identity for audit
+  ansible.builtin.import_playbook: _load-identity.yml
+  vars:
+    ssh_operation: audit
+
+- name: Audit the selected SSH identity
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Read authorized-key state
+      ansible.builtin.include_tasks: tasks/read-key-state.yml
+
+    - name: Show the identity state without key material
+      ansible.builtin.debug:
+        msg:
+          identity: "{{ hostvars['localhost'].ssh_identity_definition.display_name }}"
+          current_key: "{{ 'present' if ssh_current_key_present else 'missing' }}"
+          replacement_key: >-
+            {{
+              ('present' if ssh_replacement_key_present else 'missing')
+              if (hostvars['localhost'].ssh_identity_replacement_material | length > 0)
+              else 'not configured'
+            }}
+          authorized_keys_path: "{{ ssh_authorized_keys_path }}"
+          write_mode: "{{ 'managed' if (ssh_key_write_enabled | default(true) | bool) else 'shared verification only' }}"

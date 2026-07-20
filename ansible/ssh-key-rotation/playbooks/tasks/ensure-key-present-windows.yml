@@ -1,0 +1,40 @@
+---
+- name: Add the selected Windows public key without removing existing keys
+  ansible.windows.win_powershell:
+    parameters:
+      Path: "{{ ssh_authorized_keys_path }}"
+      PublicKey: "{{ ssh_public_key_to_manage }}"
+    script: |
+      [CmdletBinding(SupportsShouldProcess)]
+      param([string]$Path, [string]$PublicKey)
+      $targetParts = @($PublicKey.Trim() -split '\s+')
+      if ($targetParts.Count -lt 2) { throw 'Invalid public key' }
+      $targetMaterial = $targetParts[0] + ' ' + $targetParts[1]
+      $created = -not (Test-Path -LiteralPath $Path -PathType Leaf)
+      $directory = Split-Path -Parent $Path
+      if (-not $Ansible.CheckMode -and -not (Test-Path -LiteralPath $directory -PathType Container)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+      }
+      $lines = @()
+      if (-not $created) { $lines = @(Get-Content -LiteralPath $Path -ErrorAction Stop) }
+      $present = $false
+      foreach ($line in $lines) {
+        $parts = @($line.Trim() -split '\s+')
+        if ($parts.Count -ge 2 -and (($parts[0] + ' ' + $parts[1]) -eq $targetMaterial)) {
+          $present = $true
+        }
+      }
+      if (-not $present) {
+        $Ansible.Changed = $true
+        if (-not $Ansible.CheckMode) {
+          $updated = @($lines) + $PublicKey.Trim()
+          [System.IO.File]::WriteAllLines($Path, $updated, [System.Text.UTF8Encoding]::new($false))
+        }
+      } else {
+        $Ansible.Changed = $false
+      }
+      if ($created -and -not $Ansible.CheckMode -and $Path -like '*administrators_authorized_keys') {
+        & icacls.exe $Path /inheritance:r /grant '*S-1-5-32-544:F' /grant '*S-1-5-18:F' | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to secure administrators_authorized_keys ACL' }
+      }
+      $Ansible.Result = @{ present = $true }

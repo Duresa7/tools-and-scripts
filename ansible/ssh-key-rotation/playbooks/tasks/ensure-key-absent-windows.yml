@@ -1,0 +1,36 @@
+---
+- name: Remove only the exact selected Windows public key
+  ansible.windows.win_powershell:
+    parameters:
+      Path: "{{ ssh_authorized_keys_path }}"
+      PublicKey: "{{ ssh_public_key_to_manage }}"
+    script: |
+      [CmdletBinding(SupportsShouldProcess)]
+      param([string]$Path, [string]$PublicKey)
+      if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        $Ansible.Changed = $false
+        $Ansible.Result = @{ removed = 0 }
+        return
+      }
+      $targetParts = @($PublicKey.Trim() -split '\s+')
+      if ($targetParts.Count -lt 2) { throw 'Invalid public key' }
+      $targetMaterial = $targetParts[0] + ' ' + $targetParts[1]
+      $kept = @()
+      $removed = 0
+      foreach ($line in (Get-Content -LiteralPath $Path -ErrorAction Stop)) {
+        $parts = @($line.Trim() -split '\s+')
+        if ($parts.Count -ge 2 -and (($parts[0] + ' ' + $parts[1]) -eq $targetMaterial)) {
+          $removed += 1
+        } else {
+          $kept += $line
+        }
+      }
+      if ($removed -gt 0) {
+        $Ansible.Changed = $true
+        if (-not $Ansible.CheckMode) {
+          [System.IO.File]::WriteAllLines($Path, $kept, [System.Text.UTF8Encoding]::new($false))
+        }
+      } else {
+        $Ansible.Changed = $false
+      }
+      $Ansible.Result = @{ removed = $removed }

@@ -1,0 +1,13 @@
+---
+# Copy this file to identities/<identity-id>.yml and replace every example value.
+# Only a public key belongs here. Never paste a private key.
+ssh_identity:
+  id: admin-laptop
+  display_name: Admin Laptop
+  fingerprint: SHA256:REPLACE_WITH_PUBLIC_KEY_FINGERPRINT
+  current_public_key: ssh-ed25519 REPLACE_WITH_PUBLIC_KEY_DATA admin-laptop
+  target_hosts:
+    - linux-example
+  rotation:
+    replacement_public_key: ''
+    operator_verified: false

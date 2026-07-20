@@ -1,0 +1,79 @@
+---
+- name: Load the identity for retirement
+  ansible.builtin.import_playbook: _load-identity.yml
+  vars:
+    ssh_operation: retire
+
+- name: Precheck every selected target before retirement
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Read authorized-key state
+      ansible.builtin.include_tasks: tasks/read-key-state.yml
+
+    - name: Record whether this target is safe for retirement
+      ansible.builtin.set_fact:
+        ssh_rotation_precheck_passed: "{{ ssh_current_key_present and ssh_replacement_key_present }}"
+
+    - name: Require both current and replacement keys before opening the gate
+      ansible.builtin.assert:
+        that:
+          - ssh_rotation_precheck_passed
+        fail_msg: Retirement precheck failed; no removal gate will open.
+
+- name: Open the retirement gate only if every target passed
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Start with no failed target prechecks
+      ansible.builtin.set_fact:
+        ssh_failed_retirement_prechecks: []
+
+    - name: Collect failed or unreachable target prechecks
+      ansible.builtin.set_fact:
+        ssh_failed_retirement_prechecks: "{{ ssh_failed_retirement_prechecks + [item] }}"
+      loop: "{{ ssh_selected_target_hosts }}"
+      when: not (hostvars[item].ssh_rotation_precheck_passed | default(false) | bool)
+
+    - name: Keep the retirement gate closed when any target failed
+      ansible.builtin.assert:
+        that:
+          - ssh_failed_retirement_prechecks | length == 0
+        fail_msg: "Retirement blocked by: {{ ssh_failed_retirement_prechecks | join(', ') }}"
+
+    - name: Open the retirement gate
+      ansible.builtin.set_fact:
+        ssh_retirement_gate_open: true
+
+- name: Remove only the exact current key
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Remove the exact current public key on writable key stores
+      ansible.builtin.include_tasks: tasks/ensure-key-absent.yml
+      vars:
+        ssh_public_key_to_manage: "{{ hostvars['localhost'].ssh_identity_definition.current_public_key }}"
+      when:
+        - hostvars['localhost'].ssh_retirement_gate_open | default(false) | bool
+        - ssh_key_write_enabled | default(true) | bool
+
+- name: Verify the old key is absent and replacement remains
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Read authorized-key state after retirement
+      ansible.builtin.include_tasks: tasks/read-key-state.yml
+      when:
+        - hostvars['localhost'].ssh_retirement_gate_open | default(false) | bool
+        - not ansible_check_mode
+
+    - name: Require the exact retirement result
+      ansible.builtin.assert:
+        that:
+          - not ssh_current_key_present
+          - ssh_replacement_key_present
+        fail_msg: Retirement verification failed; use the current key data to restore any partial removal.
+        success_msg: The exact old key is absent and the replacement remains present.
+      when:
+        - hostvars['localhost'].ssh_retirement_gate_open | default(false) | bool
+        - not ansible_check_mode

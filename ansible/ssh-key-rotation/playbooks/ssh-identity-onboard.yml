@@ -1,0 +1,31 @@
+---
+- name: Load the identity for onboarding
+  ansible.builtin.import_playbook: _load-identity.yml
+  vars:
+    ssh_operation: onboard
+
+- name: Add the current key without deleting other identities
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Add the current public key on writable key stores
+      ansible.builtin.include_tasks: tasks/ensure-key-present.yml
+      vars:
+        ssh_public_key_to_manage: "{{ hostvars['localhost'].ssh_identity_definition.current_public_key }}"
+      when: ssh_key_write_enabled | default(true) | bool
+
+- name: Verify the current key is present on every selected target
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Read authorized-key state
+      ansible.builtin.include_tasks: tasks/read-key-state.yml
+      when: not ansible_check_mode
+
+    - name: Require the current key on every selected target
+      ansible.builtin.assert:
+        that:
+          - ssh_current_key_present
+        fail_msg: "Current key for {{ hostvars['localhost'].ssh_identity_definition.display_name }} is still missing."
+        success_msg: "Current key for {{ hostvars['localhost'].ssh_identity_definition.display_name }} is present."
+      when: not ansible_check_mode

@@ -1,0 +1,20 @@
+---
+- name: Load the identity for verification
+  ansible.builtin.import_playbook: _load-identity.yml
+  vars:
+    ssh_operation: verify
+
+- name: Verify staged key presence before the owner's login test
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Read authorized-key state
+      ansible.builtin.include_tasks: tasks/read-key-state.yml
+
+    - name: Require both keys on every selected target
+      ansible.builtin.assert:
+        that:
+          - ssh_current_key_present
+          - ssh_replacement_key_present
+        fail_msg: Replacement presence verification failed; retirement remains blocked.
+        success_msg: Replacement is staged; test login from the owner device before retirement.

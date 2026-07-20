@@ -1,0 +1,127 @@
+---
+- name: Load and validate the selected SSH identity
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ssh_identity_file_path: "{{ playbook_dir }}/../identities/{{ ssh_identity | default('') }}.yml"
+    ssh_public_key_pattern: '^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)) [A-Za-z0-9+/]+={0,3}( .*)?$'
+  tasks:
+    - name: Require a safe identity identifier
+      ansible.builtin.assert:
+        that:
+          - ssh_identity is defined
+          - ssh_identity is string
+          - ssh_identity is match('^[a-z0-9][a-z0-9-]*$')
+          - ssh_operation in ['audit', 'onboard', 'stage', 'verify', 'retire']
+        fail_msg: Supply a lowercase identity name such as admin-laptop.
+
+    - name: Check that the identity file exists
+      ansible.builtin.stat:
+        path: "{{ ssh_identity_file_path }}"
+      register: ssh_identity_file_stat
+
+    - name: Reject an unknown identity
+      ansible.builtin.assert:
+        that:
+          - ssh_identity_file_stat.stat.exists
+          - ssh_identity_file_stat.stat.isreg
+        fail_msg: "Identity file not found: identities/{{ ssh_identity }}.yml"
+
+    - name: Load the identity definition
+      ansible.builtin.include_vars:
+        file: "{{ ssh_identity_file_path }}"
+        name: ssh_identity_file_data
+      no_log: true
+
+    - name: Store the identity definition
+      ansible.builtin.set_fact:
+        ssh_identity_definition: "{{ ssh_identity_file_data.ssh_identity }}"
+      no_log: true
+
+    - name: Validate the identity schema and allowlist
+      ansible.builtin.assert:
+        that:
+          - ssh_identity_definition.id == ssh_identity
+          - ssh_identity_definition.display_name | length > 0
+          - ssh_identity_definition.fingerprint is match('^SHA256:[A-Za-z0-9+/]+$')
+          - ssh_identity_definition.current_public_key is match(ssh_public_key_pattern)
+          - ssh_identity_definition.target_hosts is sequence
+          - ssh_identity_definition.target_hosts is not string
+          - ssh_identity_definition.target_hosts | length > 0
+          - ssh_identity_definition.target_hosts | unique | list | length == ssh_identity_definition.target_hosts | length
+          - ssh_identity_definition.target_hosts | difference(groups['ssh_key_supported']) | length == 0
+          - ssh_identity_definition.rotation is mapping
+          - ssh_identity_definition.rotation.replacement_public_key is string
+          - ssh_identity_definition.rotation.operator_verified is boolean
+        fail_msg: "Identity {{ ssh_identity }} failed schema or target-allowlist validation."
+
+    - name: Derive key material used for exact comparisons
+      ansible.builtin.set_fact:
+        ssh_identity_current_material: "{{ ssh_identity_definition.current_public_key.split()[0:2] | join(' ') }}"
+        ssh_identity_replacement_material: >-
+          {{
+            (ssh_identity_definition.rotation.replacement_public_key.split()[0:2] | join(' '))
+            if (ssh_identity_definition.rotation.replacement_public_key | length > 0)
+            else ''
+          }}
+      no_log: true
+
+    - name: Validate replacement data for rotation operations
+      ansible.builtin.assert:
+        that:
+          - ssh_identity_definition.rotation.replacement_public_key | length > 0
+          - ssh_identity_definition.rotation.replacement_public_key is match(ssh_public_key_pattern)
+          - ssh_identity_replacement_material != ssh_identity_current_material
+        fail_msg: Add a distinct replacement_public_key to the selected identity before this operation.
+      when: ssh_operation in ['stage', 'verify', 'retire']
+
+    - name: Require the owner test and explicit retirement phrase
+      ansible.builtin.assert:
+        that:
+          - ssh_identity_definition.rotation.operator_verified | bool
+          - ssh_retire_confirmation | default('') == 'RETIRE ' ~ ssh_identity
+        fail_msg: >-
+          Retirement is blocked. Test the replacement from its owner device, set
+          operator_verified to true, and supply "RETIRE {{ ssh_identity }}".
+      when: ssh_operation == 'retire'
+
+    - name: Reject simultaneous target selectors
+      ansible.builtin.assert:
+        that:
+          - not (ssh_target_group is defined and ssh_target_hosts is defined)
+        fail_msg: Use either ssh_target_group or ssh_target_hosts, not both.
+
+    - name: Default to the identity allowlist
+      ansible.builtin.set_fact:
+        ssh_requested_target_hosts: "{{ ssh_identity_definition.target_hosts }}"
+
+    - name: Select an inventory group within the identity allowlist
+      ansible.builtin.set_fact:
+        ssh_requested_target_hosts: "{{ groups[ssh_target_group] | default([]) }}"
+      when: ssh_target_group is defined
+
+    - name: Select an explicit host list within the identity allowlist
+      ansible.builtin.set_fact:
+        ssh_requested_target_hosts: "{{ ssh_target_hosts }}"
+      when: ssh_target_hosts is defined
+
+    - name: Validate the requested target subset
+      ansible.builtin.assert:
+        that:
+          - ssh_requested_target_hosts is sequence
+          - ssh_requested_target_hosts is not string
+          - ssh_requested_target_hosts | length > 0
+          - ssh_requested_target_hosts | unique | list | length == ssh_requested_target_hosts | length
+          - ssh_requested_target_hosts | difference(ssh_identity_definition.target_hosts) | length == 0
+        fail_msg: Every requested host must be unique and present in the identity allowlist.
+
+    - name: Save the selected target list
+      ansible.builtin.set_fact:
+        ssh_selected_target_hosts: "{{ ssh_requested_target_hosts }}"
+
+    - name: Build the runtime target group
+      ansible.builtin.add_host:
+        name: "{{ item }}"
+        groups: ssh_identity_runtime_targets
+      loop: "{{ ssh_selected_target_hosts }}"
+      changed_when: false

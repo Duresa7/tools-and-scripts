@@ -1,0 +1,8 @@
+---
+- name: Add the selected public key without removing existing keys
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    key: "{{ ssh_public_key_to_manage }}"
+    state: present
+    exclusive: false
+    manage_dir: true

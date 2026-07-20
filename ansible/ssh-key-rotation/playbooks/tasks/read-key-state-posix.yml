@@ -1,0 +1,44 @@
+---
+- name: Inspect the authorized-keys file
+  ansible.builtin.stat:
+    path: "{{ ssh_authorized_keys_path }}"
+    follow: true
+  register: ssh_authorized_keys_stat
+
+- name: Read the authorized-keys file
+  ansible.builtin.slurp:
+    path: "{{ ssh_authorized_keys_path }}"
+  register: ssh_authorized_keys_slurp
+  no_log: true
+  when: ssh_authorized_keys_stat.stat.exists
+
+- name: Start the normalized public-key list
+  ansible.builtin.set_fact:
+    ssh_authorized_key_materials: []
+
+- name: Normalize installed public-key material
+  ansible.builtin.set_fact:
+    ssh_authorized_key_materials: >-
+      {{ ssh_authorized_key_materials + [item.split()[0] ~ ' ' ~ item.split()[1]] }}
+  loop: >-
+    {{
+      (ssh_authorized_keys_slurp.content | b64decode).splitlines()
+      if ssh_authorized_keys_stat.stat.exists
+      else []
+    }}
+  loop_control:
+    label: public-key-line
+  when:
+    - item.split() | length >= 2
+    - item.split()[0] is match('^(ssh-|ecdsa-)')
+  no_log: true
+
+- name: Record selected identity state
+  ansible.builtin.set_fact:
+    ssh_current_key_present: "{{ hostvars['localhost'].ssh_identity_current_material in ssh_authorized_key_materials }}"
+    ssh_replacement_key_present: >-
+      {{
+        (hostvars['localhost'].ssh_identity_replacement_material in ssh_authorized_key_materials)
+        if (hostvars['localhost'].ssh_identity_replacement_material | length > 0)
+        else false
+      }}

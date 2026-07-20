@@ -1,0 +1,36 @@
+---
+- name: Read the Windows authorized-keys file
+  ansible.windows.win_powershell:
+    parameters:
+      Path: "{{ ssh_authorized_keys_path }}"
+    script: |
+      [CmdletBinding(SupportsShouldProcess)]
+      param([string]$Path)
+      $exists = Test-Path -LiteralPath $Path -PathType Leaf
+      $materials = @()
+      if ($exists) {
+        foreach ($line in (Get-Content -LiteralPath $Path -ErrorAction Stop)) {
+          $parts = @($line.Trim() -split '\s+')
+          if ($parts.Count -ge 2 -and ($parts[0] -like 'ssh-*' -or $parts[0] -like 'ecdsa-*')) {
+            $materials += ($parts[0] + ' ' + $parts[1])
+          }
+        }
+      }
+      $Ansible.Changed = $false
+      $Ansible.Result = @{
+        exists = $exists
+        materials = $materials
+      }
+  register: ssh_windows_key_state
+  no_log: true
+
+- name: Record selected identity state
+  ansible.builtin.set_fact:
+    ssh_authorized_key_materials: "{{ ssh_windows_key_state.result.materials }}"
+    ssh_current_key_present: "{{ hostvars['localhost'].ssh_identity_current_material in ssh_windows_key_state.result.materials }}"
+    ssh_replacement_key_present: >-
+      {{
+        (hostvars['localhost'].ssh_identity_replacement_material in ssh_windows_key_state.result.materials)
+        if (hostvars['localhost'].ssh_identity_replacement_material | length > 0)
+        else false
+      }}

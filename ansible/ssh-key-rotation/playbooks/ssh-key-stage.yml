@@ -1,0 +1,32 @@
+---
+- name: Load the identity for staging
+  ansible.builtin.import_playbook: _load-identity.yml
+  vars:
+    ssh_operation: stage
+
+- name: Stage the replacement key beside the current key
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Add the replacement public key on writable key stores
+      ansible.builtin.include_tasks: tasks/ensure-key-present.yml
+      vars:
+        ssh_public_key_to_manage: "{{ hostvars['localhost'].ssh_identity_definition.rotation.replacement_public_key }}"
+      when: ssh_key_write_enabled | default(true) | bool
+
+- name: Verify both keys remain present after staging
+  hosts: ssh_identity_runtime_targets
+  gather_facts: false
+  tasks:
+    - name: Read authorized-key state
+      ansible.builtin.include_tasks: tasks/read-key-state.yml
+      when: not ansible_check_mode
+
+    - name: Require both current and replacement keys
+      ansible.builtin.assert:
+        that:
+          - ssh_current_key_present
+          - ssh_replacement_key_present
+        fail_msg: Staging verification failed; the current key has not been removed.
+        success_msg: Both current and replacement keys are present.
+      when: not ansible_check_mode
