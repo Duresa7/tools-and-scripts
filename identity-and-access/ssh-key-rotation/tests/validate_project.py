@@ -33,7 +33,11 @@ PLAYBOOKS = (
     "ssh-key-verify.yml",
 )
 TASK_FAMILIES = ("ensure-key-absent", "ensure-key-present", "read-key-state")
-POWERSHELL_FILES = ("Manage-AuthorizedKey.ps1", "Read-AuthorizedKeyState.ps1")
+POWERSHELL_FILES = (
+    "AuthorizedKey.Common.ps1",
+    "Manage-AuthorizedKey.ps1",
+    "Read-AuthorizedKeyState.ps1",
+)
 
 
 def fingerprint(public_key: str) -> str:
@@ -310,6 +314,16 @@ def validate_project(
     for filename in POWERSHELL_FILES:
         if not (root / "playbooks" / "files" / filename).is_file():
             errors.append(f"missing PowerShell file: {filename}")
+    for filename in ("Manage-AuthorizedKey.ps1", "Read-AuthorizedKeyState.ps1"):
+        path = root / "playbooks" / "files" / filename
+        try:
+            marker_count = path.read_text(encoding="utf-8").count(
+                "# AUTHORIZED_KEY_COMMON_FUNCTIONS"
+            )
+        except OSError:
+            continue
+        if marker_count != 1:
+            errors.append(f"{filename}: expected one common-function marker")
     return errors
 
 

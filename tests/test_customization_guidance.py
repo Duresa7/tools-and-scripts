@@ -7,8 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 MARKER_COUNTS = {
     "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 7,
-    "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 12,
-    "networking/networkmanager-cutover/config.example.conf": 10,
+    "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 37,
+    "networking/networkmanager-cutover/config.example.conf": 11,
     "monitoring/prometheus-target-check/config.example.json": 10,
     "backup-and-recovery/semaphore-sqlite-guard/config.example.toml": 4,
     "migrations/teamspeak-channel-migration/config.example.toml": 13,
@@ -55,6 +55,34 @@ def test_user_supplied_configuration_has_customize_markers() -> None:
         for path in MARKER_COUNTS
     }
     assert marker_counts == MARKER_COUNTS
+
+
+def test_ssh_inventory_marks_each_environment_owned_example_value() -> None:
+    path = ROOT / "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example"
+    lines = path.read_text(encoding="utf-8").splitlines()
+    owned_fragments = (
+        "-example:",
+        "192.0.2.",
+        "replace-",
+        "/srv/shared-service/",
+        "ssh_key_write_enabled:",
+        "ssh_key_manage_directory:",
+        "ssh_key_become:",
+        "ssh_key_shared_writer:",
+    )
+
+    missing = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("#") or not any(
+            fragment in stripped for fragment in owned_fragments
+        ):
+            continue
+        previous = lines[index - 1].strip() if index else ""
+        if not previous.startswith("# CUSTOMIZE:"):
+            missing.append(stripped)
+
+    assert missing == []
 
 
 def test_prometheus_example_explains_its_placeholders() -> None:

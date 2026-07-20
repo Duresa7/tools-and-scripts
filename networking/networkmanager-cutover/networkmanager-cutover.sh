@@ -15,6 +15,7 @@ candidate_file=''
 source_file=''
 expected_ipv4=''
 expected_gateway=''
+expected_routes=''
 expected_dns=''
 dns_probe='example.com'
 timeout_seconds=30
@@ -41,6 +42,7 @@ Required inputs:
   --connection NAME        Existing NetworkManager connection profile
   --expect-ipv4 CIDR       Exact global IPv4 address and prefix
   --expect-gateway ADDRESS Exact default IPv4 gateway
+  --expect-routes LIST     Exact default routes, separated with |
   --expect-dns LIST        Exact comma-separated DNS server set
 
 Preparation inputs:
@@ -82,6 +84,7 @@ set_config_value() {
     SOURCE_FILE) source_file=$value ;;
     EXPECT_IPV4) expected_ipv4=$value ;;
     EXPECT_GATEWAY) expected_gateway=$value ;;
+    EXPECT_ROUTES) expected_routes=$value ;;
     EXPECT_DNS) expected_dns=$value ;;
     DNS_PROBE) dns_probe=$value ;;
     TIMEOUT_SECONDS) timeout_seconds=$value ;;
@@ -166,6 +169,11 @@ while (($# > 0)); do
       expected_gateway=$2
       shift 2
       ;;
+    --expect-routes)
+      require_value "$1" "${2-}"
+      expected_routes=$2
+      shift 2
+      ;;
     --expect-dns)
       require_value "$1" "${2-}"
       expected_dns=$2
@@ -216,6 +224,8 @@ done
   die '--expect-ipv4 must contain one address and prefix length'
 [[ -n $expected_gateway && $expected_gateway != *[[:space:],]* ]] ||
   die '--expect-gateway must contain one address'
+[[ -n $expected_routes && $expected_routes != *$'\n'* && $expected_routes != *$'\r'* ]] ||
+  die '--expect-routes must contain the complete default-route set'
 [[ -n $expected_dns && $expected_dns != *[[:space:]]* ]] ||
   die '--expect-dns must contain a comma-separated address set'
 [[ $timeout_seconds =~ ^[1-9][0-9]*$ ]] ||
@@ -238,6 +248,26 @@ done
 normalize_dns() {
   tr ',' '\n' | awk 'NF' | sort -u | paste -sd, -
 }
+
+normalize_routes() {
+  tr '|' '\n' | awk '{$1=$1; if (NF) print}' | sort -u | paste -sd'|' -
+}
+
+expected_routes=$(printf '%s\n' "$expected_routes" | normalize_routes)
+[[ -n $expected_routes ]] || die '--expect-routes contains no routes'
+while IFS= read -r expected_route; do
+  [[ $expected_route == default\ * ]] ||
+    die "expected route is not a default route: $expected_route"
+  printf '%s\n' "$expected_route" |
+    awk -v interface="$interface" '
+      { for (field = 1; field < NF; field++) {
+          if ($field == "dev" && $(field + 1) == interface) found = 1
+        }
+      }
+      END { exit(found ? 0 : 1) }
+    ' ||
+    die "expected route does not name interface '$interface': $expected_route"
+done < <(printf '%s\n' "$expected_routes" | tr '|' '\n')
 
 expected_dns=$(printf '%s\n' "$expected_dns" | normalize_dns)
 [[ -n $expected_dns ]] || die '--expect-dns contains no addresses'
@@ -285,6 +315,7 @@ network_ready() {
   local actual_connection=''
   local actual_ipv4=''
   local actual_gateway=''
+  local actual_routes=''
   local actual_dns=''
 
   [[ $(nmcli -t -f STATE general) == connected ]] || return 1
@@ -300,6 +331,10 @@ network_ready() {
       awk '$1 == "default" && $2 == "via" {print $3}' | sort -u | paste -sd, -
   )
   [[ $actual_gateway == "$expected_gateway" ]] || return 1
+  actual_routes=$(
+    ip -4 route show table all default dev "$interface" | normalize_routes
+  )
+  [[ $actual_routes == "$expected_routes" ]] || return 1
   actual_dns=$(nmcli -g IP4.DNS device show "$interface" | normalize_dns)
   [[ $actual_dns == "$expected_dns" ]] || return 1
   [[ -z $dns_probe ]] || getent ahosts "$dns_probe" >/dev/null
@@ -309,6 +344,7 @@ print_state() {
   printf 'connection=%s\n' "$(nmcli -g GENERAL.CONNECTION device show "$interface")"
   printf 'ipv4=%s\n' "$({ ip -o -4 address show dev "$interface" scope global || true; } | awk '{print $4}' | sort -u | paste -sd, -)"
   printf 'gateway=%s\n' "$({ ip -4 route show default dev "$interface" || true; } | awk '$1 == "default" && $2 == "via" {print $3}' | sort -u | paste -sd, -)"
+  printf 'routes=%s\n' "$({ ip -4 route show table all default dev "$interface" || true; } | normalize_routes)"
   printf 'dns=%s\n' "$({ nmcli -g IP4.DNS device show "$interface" || true; } | normalize_dns)"
 }
 
@@ -345,8 +381,9 @@ fi
 stack_preflight
 printf 'preflight-ok: stack=%s interface=%s connection=%q\n' \
   "$stack" "$interface" "$connection_name"
-printf 'expected-state: ipv4=%s gateway=%s dns=%s probe=%s\n' \
-  "$expected_ipv4" "$expected_gateway" "$expected_dns" "${dns_probe:-skipped}"
+printf 'expected-state: ipv4=%s gateway=%s routes=%q dns=%s probe=%s\n' \
+  "$expected_ipv4" "$expected_gateway" "$expected_routes" "$expected_dns" \
+  "${dns_probe:-skipped}"
 
 if [[ $mode == dry-run ]]; then
   printf 'dry-run: no network files, profiles, interfaces, or services were changed\n'

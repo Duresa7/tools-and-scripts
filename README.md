@@ -9,6 +9,7 @@ Small utilities for DevOps, IT operations, security work, migrations, and self-h
 - [Quick start](#quick-start)
 - [Tool catalog](#tool-catalog)
 - [Status and safety](#status-and-safety)
+- [Compatibility](#compatibility)
 - [Configuration rules](#configuration-rules)
 - [Local checks](#local-checks)
 - [Adding a tool](#adding-a-tool)
@@ -79,6 +80,10 @@ python check.py
 | SSH key rotation | Linux controller; POSIX and Windows targets | Ansible Core 2.17+ | Per-target settings | Authorized-key files | Audit and check mode | Replacement is verified before retirement | Locally checked; live matrix pending |
 
 Every state-changing tool documents the exact confirmation, backup, and rollback behavior in its own README. Don't test network cutovers, key retirement, or channel creation against an active system that can't tolerate interruption.
+
+## Compatibility
+
+[Compatibility validation](COMPATIBILITY.md) separates completed local checks from the pending Debian 13, Ubuntu 24.04, Rocky 10, Windows 11, and Windows Server 2025 live matrix. No live compatibility claim is complete until every required scenario has a sanitized passing record.
 
 ## Configuration rules
 

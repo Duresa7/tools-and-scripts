@@ -5,7 +5,14 @@
       Path: "{{ ssh_authorized_keys_path }}"
       Owner: "{{ ssh_key_owner }}"
       AccountType: "{{ ssh_key_windows_account_type }}"
-    script: "{{ lookup('ansible.builtin.file', playbook_dir + '/files/Read-AuthorizedKeyState.ps1') }}"
+    script: >-
+      {{
+        lookup('ansible.builtin.file', playbook_dir + '/files/Read-AuthorizedKeyState.ps1')
+        | replace(
+          '# AUTHORIZED_KEY_COMMON_FUNCTIONS',
+          lookup('ansible.builtin.file', playbook_dir + '/files/AuthorizedKey.Common.ps1')
+        )
+      }}
   register: ssh_windows_key_state
   no_log: true
   become: "{{ ssh_key_become | default(false) | bool }}"

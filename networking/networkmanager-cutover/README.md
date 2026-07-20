@@ -1,6 +1,6 @@
 # NetworkManager cutover
 
-Move one Linux interface to an existing NetworkManager profile without editing addresses into the operational script. The command checks one exact IPv4 address, one default gateway, the complete DNS server set, the active profile, and optional name resolution.
+Move one Linux interface to an existing NetworkManager profile without editing addresses into the operational script. The command checks one exact IPv4 address, the full default-route set and its attributes, the complete DNS server set, the active profile, and optional name resolution.
 
 ## Contents
 
@@ -86,6 +86,7 @@ nmcli connection show "$CONNECTION_NAME"
 | `SOURCE_FILE` | Current ifupdown or Netplan file that will be backed up |
 | `EXPECT_IPV4` | The only expected global IPv4 address and prefix |
 | `EXPECT_GATEWAY` | The only expected default IPv4 gateway |
+| `EXPECT_ROUTES` | Exact normalized default routes, including device, protocol, table labels, and metrics; separate multiple routes with `|` |
 | `EXPECT_DNS` | Exact DNS server set, comma-separated |
 | `DNS_PROBE` | Hostname that must resolve; an empty value skips this one check |
 | `TIMEOUT_SECONDS` | Seconds allowed for the expected state to appear |
@@ -125,7 +126,7 @@ After a successful reboot, rerun the assertions without elevation:
 
 ## Safeguard reasoning
 
-The candidate is supplied as a complete file because an automatic partial edit can leave two network systems owning one interface. The exact confirmation phrase prevents an old dry-run command from becoming a live cutover after one flag change. Exact address, gateway, DNS, and profile comparisons reject a connected state that reached the wrong network.
+The candidate is supplied as a complete file because an automatic partial edit can leave two network systems owning one interface. The exact confirmation phrase prevents an old dry-run command from becoming a live cutover after one flag change. Exact address, full route, DNS, and profile comparisons reject a connected state with the wrong metric, protocol, table, or gateway.
 
 ## Rollback
 
@@ -138,7 +139,7 @@ If rollback reports an error, use the local console. Restore the printed backup 
 - `candidate still configures`: remove the selected interface from the ifupdown candidate and every sourced file.
 - `candidate must set renderer`: add `renderer: NetworkManager` at the correct Netplan level.
 - `connection targets`: bind the existing profile to the same interface named in the config.
-- `current state does not match`: compare the printed `connection`, `ipv4`, `gateway`, and `dns` values with the config.
+- `current state does not match`: compare the printed `connection`, `ipv4`, `gateway`, `routes`, and `dns` values with the config.
 - `rollback-error`: keep the console session open and restore the printed backup manually.
 
 ## Exit behavior

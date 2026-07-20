@@ -114,10 +114,19 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(configuration_payload(settings, targets), indent=2) + "\n",
-        encoding="utf-8",
-    )
+    try:
+        # Exclusive creation closes the race between the early existence check and
+        # this write. A concurrently created local config is never replaced.
+        with args.output.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(
+                json.dumps(configuration_payload(settings, targets), indent=2) + "\n"
+            )
+    except FileExistsError:
+        print(
+            f"error: refusing to replace existing file: {args.output}",
+            file=sys.stderr,
+        )
+        return 1
     print(f"configuration-written: {args.output}")
     if not args.discover_targets:
         print("next-step: replace the CUSTOMIZE target before running the check")

@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -108,9 +109,26 @@ def require_python_modules(runner: CheckRunner) -> bool:
 
 def parse_examples(runner: CheckRunner) -> None:
     try:
+        conf_files = sorted(ROOT.rglob("config.example.conf"))
         json_files = sorted(ROOT.rglob("config.example.json"))
         toml_files = sorted(ROOT.rglob("config.example.toml"))
         yaml_files = sorted(ROOT.rglob("*.yml.example"))
+        for path in conf_files:
+            seen: set[str] = set()
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            ):
+                if not line or line.startswith("#"):
+                    continue
+                match = re.fullmatch(r"([A-Z][A-Z0-9_]*)=(.*)", line)
+                if match is None:
+                    raise ValueError(
+                        f"{path}:{line_number}: expected strict KEY=value syntax"
+                    )
+                key = match.group(1)
+                if key in seen:
+                    raise ValueError(f"{path}:{line_number}: duplicate key: {key}")
+                seen.add(key)
         for path in json_files:
             json.loads(path.read_text(encoding="utf-8"))
         for path in toml_files:
@@ -147,6 +165,11 @@ def check_python_help(runner: CheckRunner) -> None:
             "Semaphore configurator help",
             "backup-and-recovery/semaphore-sqlite-guard/configure.py",
             ["--help"],
+        ),
+        (
+            "Semaphore comparison help",
+            "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
+            ["compare", "--help"],
         ),
         (
             "TeamSpeak export help",
@@ -208,6 +231,9 @@ def linux_check_script(root: str) -> str:
             f"cd {shlex.quote(root)}",
             f"bash -n {quoted_bash_files}",
             f"shellcheck {quoted_bash_files}",
+            "bash networking/networkmanager-cutover/networkmanager-cutover.sh "
+            "--help >/dev/null",
+            "bash networking/networkmanager-cutover/configure.sh --help >/dev/null",
             "ssh_tool=identity-and-access/ssh-key-rotation",
             "inventory=$(mktemp --suffix=.yml)",
             "trap 'rm -f \"$inventory\"' EXIT",
@@ -260,11 +286,27 @@ def run_linux_checks(runner: CheckRunner) -> None:
 
 def powershell_parser_command(files: list[Path]) -> str:
     quoted = ",".join("'" + str(path).replace("'", "''") + "'" for path in files)
+    common = str(SSH_TOOL / "playbooks" / "files" / "AuthorizedKey.Common.ps1").replace(
+        "'", "''"
+    )
+    templates = ",".join(
+        "'" + str(SSH_TOOL / "playbooks" / "files" / filename).replace("'", "''") + "'"
+        for filename in ("Manage-AuthorizedKey.ps1", "Read-AuthorizedKeyState.ps1")
+    )
     return (
         f"$files=@({quoted});$failed=$false;foreach($file in $files){{"
         "$tokens=$null;$errors=$null;"
         "[System.Management.Automation.Language.Parser]::ParseFile("
         "$file,[ref]$tokens,[ref]$errors)|Out-Null;"
+        "if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_.Message};"
+        "$failed=$true}};"
+        f"$common=Get-Content -Raw -LiteralPath '{common}';"
+        f"$templates=@({templates});foreach($file in $templates){{"
+        "$payload=(Get-Content -Raw -LiteralPath $file).Replace("
+        "'# AUTHORIZED_KEY_COMMON_FUNCTIONS',$common);"
+        "$tokens=$null;$errors=$null;"
+        "[System.Management.Automation.Language.Parser]::ParseInput("
+        "$payload,[ref]$tokens,[ref]$errors)|Out-Null;"
         "if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_.Message};"
         "$failed=$true}};if($failed){exit 1}"
     )

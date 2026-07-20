@@ -97,7 +97,17 @@ def main(argv: list[str] | None = None) -> int:
             "",
         )
     )
-    args.output.write_text(contents, encoding="utf-8")
+    try:
+        # Exclusive creation closes the race between the early existence check and
+        # this write. A concurrently created local config is never replaced.
+        with args.output.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(contents)
+    except FileExistsError:
+        print(
+            f"error: refusing to replace existing file: {args.output}",
+            file=sys.stderr,
+        )
+        return 1
     print(f"configuration-written: {args.output}")
     print("discovery: local paths only; the database was not opened")
     return 0

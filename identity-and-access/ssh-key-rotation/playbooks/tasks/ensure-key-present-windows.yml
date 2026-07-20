@@ -7,5 +7,12 @@
       Owner: "{{ ssh_key_owner }}"
       AccountType: "{{ ssh_key_windows_account_type }}"
       State: present
-    script: "{{ lookup('ansible.builtin.file', playbook_dir + '/files/Manage-AuthorizedKey.ps1') }}"
+    script: >-
+      {{
+        lookup('ansible.builtin.file', playbook_dir + '/files/Manage-AuthorizedKey.ps1')
+        | replace(
+          '# AUTHORIZED_KEY_COMMON_FUNCTIONS',
+          lookup('ansible.builtin.file', playbook_dir + '/files/AuthorizedKey.Common.ps1')
+        )
+      }}
   become: "{{ ssh_key_become | default(false) | bool }}"

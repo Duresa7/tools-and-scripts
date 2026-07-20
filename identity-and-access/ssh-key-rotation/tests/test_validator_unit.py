@@ -15,6 +15,23 @@ sys.modules[SPEC.name] = VALIDATOR
 SPEC.loader.exec_module(VALIDATOR)
 
 
+def assert_customize_comments_are_adjacent(
+    path: Path, owned_fragments: tuple[str, ...]
+) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    missing = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("#") or not any(
+            fragment in stripped for fragment in owned_fragments
+        ):
+            continue
+        previous = lines[index - 1].strip() if index else ""
+        if not previous.startswith("# CUSTOMIZE:"):
+            missing.append(stripped)
+    assert missing == []
+
+
 def test_fingerprint_matches_openssh_sha256_shape() -> None:
     raw = b"public-key-fixture"
     public_key = f"ssh-ed25519 {base64.b64encode(raw).decode()} fixture"
@@ -196,6 +213,32 @@ def test_configurator_creates_ignored_yaml_from_a_public_key(tmp_path: Path) -> 
     identity_id = VALIDATOR.validate_identity(identity_path, supported, errors)
     assert identity_id == "workstation-key"
     assert errors == []
+    assert_customize_comments_are_adjacent(
+        inventory_path,
+        (
+            '"server-one":',
+            "ansible_host:",
+            "ansible_user:",
+            "ssh_key_platform:",
+            "ssh_key_owner:",
+            "ssh_authorized_keys_path:",
+            "ssh_key_become:",
+            "ssh_key_manage_directory:",
+            "ssh_key_write_enabled:",
+        ),
+    )
+    assert_customize_comments_are_adjacent(
+        identity_path,
+        (
+            "id:",
+            "display_name:",
+            "fingerprint:",
+            "current_public_key:",
+            '- "server-one"',
+            "replacement_public_key:",
+            "operator_verified:",
+        ),
+    )
 
 
 def test_configurator_rejects_private_key_material(tmp_path: Path) -> None:

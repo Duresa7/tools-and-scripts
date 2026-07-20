@@ -7,6 +7,7 @@ all:
         posix_ssh_key_hosts:
           vars:
             ssh_key_platform: posix
+            # CUSTOMIZE: Keep true for hosts where this tool may change the key file.
             ssh_key_write_enabled: true
           hosts:
             # CUSTOMIZE: Rename this inventory alias.
@@ -19,6 +20,7 @@ all:
               ssh_key_owner: replace-managed-account
               # CUSTOMIZE: Set the absolute authorized_keys path for that owner.
               ssh_authorized_keys_path: /home/replace-managed-account/.ssh/authorized_keys
+              # CUSTOMIZE: Keep true only when this tool should create the .ssh directory.
               ssh_key_manage_directory: true
               # CUSTOMIZE: Set true when the connection account needs sudo for this file.
               ssh_key_become: true
@@ -26,23 +28,35 @@ all:
         shared_posix_key_hosts:
           vars:
             ssh_key_platform: posix
+            # CUSTOMIZE: Set the account that owns the shared authorized_keys file.
             ssh_key_owner: replace-managed-account
+            # CUSTOMIZE: Set the absolute shared authorized_keys path.
             ssh_authorized_keys_path: /srv/shared-service/authorized_keys
             # A shared service directory must be provisioned outside this playbook.
+            # CUSTOMIZE: Keep false because this tool must not create the shared directory.
             ssh_key_manage_directory: false
           hosts:
-            # CUSTOMIZE: This alias performs the one write to the shared file.
+            # CUSTOMIZE: Rename the alias that performs the one shared-file write.
             shared-writer-example:
+              # CUSTOMIZE: Set the writer target address or resolvable name.
               ansible_host: 192.0.2.20
+              # CUSTOMIZE: Set the ordinary connection account for the writer.
               ansible_user: replace-connection-account
+              # CUSTOMIZE: Set true when the connection account needs sudo for the shared file.
               ssh_key_become: true
+              # CUSTOMIZE: Keep true for the only host allowed to write this shared file.
               ssh_key_write_enabled: true
-            # CUSTOMIZE: This alias verifies the shared file and names its writer.
+            # CUSTOMIZE: Rename the alias that verifies the shared file without writing it.
             shared-reader-example:
+              # CUSTOMIZE: Set the reader target address or resolvable name.
               ansible_host: 192.0.2.21
+              # CUSTOMIZE: Set the ordinary connection account for the reader.
               ansible_user: replace-connection-account
+              # CUSTOMIZE: Set true when reading the shared file needs sudo.
               ssh_key_become: true
+              # CUSTOMIZE: Keep false so this alias never writes the shared file.
               ssh_key_write_enabled: false
+              # CUSTOMIZE: Name the writer alias defined above.
               ssh_key_shared_writer: shared-writer-example
 
         windows_standard_key_hosts:
@@ -51,14 +65,20 @@ all:
             ansible_shell_type: powershell
             ssh_key_platform: windows
             ssh_key_windows_account_type: standard
+            # CUSTOMIZE: Keep true for standard-user files this tool may change.
             ssh_key_write_enabled: true
           hosts:
-            # CUSTOMIZE: Set a Windows standard-user target and account details.
+            # CUSTOMIZE: Rename this Windows standard-user inventory alias.
             windows-standard-example:
+              # CUSTOMIZE: Set the Windows target address or resolvable name.
               ansible_host: 192.0.2.30
+              # CUSTOMIZE: Set the ordinary OpenSSH connection account.
               ansible_user: replace-windows-account
+              # CUSTOMIZE: Set the standard account whose key file is managed.
               ssh_key_owner: replace-windows-account
+              # CUSTOMIZE: Set that account's absolute authorized_keys path.
               ssh_authorized_keys_path: 'C:\Users\replace-windows-account\.ssh\authorized_keys'
+              # CUSTOMIZE: Keep false when the connection account owns this file.
               ssh_key_become: false
 
         windows_administrator_key_hosts:
@@ -69,21 +89,27 @@ all:
             ssh_key_windows_account_type: administrator
             ssh_key_owner: 'BUILTIN\Administrators'
             ssh_authorized_keys_path: 'C:\ProgramData\ssh\administrators_authorized_keys'
+            # CUSTOMIZE: Keep true when this tool may change the administrator key file.
             ssh_key_write_enabled: true
           hosts:
-            # CUSTOMIZE: Set the target and a connection account allowed to elevate.
+            # CUSTOMIZE: Rename this Windows administrator inventory alias.
             windows-administrator-example:
+              # CUSTOMIZE: Set the Windows target address or resolvable name.
               ansible_host: 192.0.2.31
+              # CUSTOMIZE: Set the ordinary OpenSSH connection account.
               ansible_user: replace-connection-account
+              # CUSTOMIZE: Keep true because the administrator file needs elevation.
               ssh_key_become: true
               ansible_become_method: runas
               # CUSTOMIZE: Set the Windows account used for the elevated task.
               ansible_become_user: replace-elevation-account
 
-    # CUSTOMIZE: Keep unverified hosts here until platform, owner, and path are known.
+    # Keep unverified hosts here until platform, owner, and path are known.
     ssh_key_unknown:
       hosts:
+        # CUSTOMIZE: Rename this alias for the unverified target.
         unverified-example:
+          # CUSTOMIZE: Set the unverified target address or resolvable name.
           ansible_host: 192.0.2.40
 
     # Managed at runtime by the playbooks. Do not add hosts to this group.

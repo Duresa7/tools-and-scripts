@@ -7,14 +7,12 @@ import argparse
 import base64
 import binascii
 import hashlib
+import json
 import os
 import re
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
-
-import yaml
 
 IDENTITY_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 PUBLIC_KEY_PATTERN = re.compile(r"^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521))$")
@@ -73,61 +71,99 @@ def validate_args(args: argparse.Namespace) -> None:
         )
 
 
-def inventory_payload(args: argparse.Namespace) -> dict[str, Any]:
-    variables: dict[str, Any] = {
-        "ansible_host": args.host,
-        "ansible_user": args.connection_user,
-        "ssh_key_platform": args.platform,
-        "ssh_key_owner": args.managed_owner,
-        "ssh_authorized_keys_path": args.authorized_keys_path,
-        "ssh_key_become": args.become,
-        "ssh_key_manage_directory": True,
-        "ssh_key_write_enabled": True,
-    }
+def yaml_scalar(value: str | bool) -> str:
+    if isinstance(value, bool):
+        return str(value).lower()
+    # JSON strings are valid YAML scalars and preserve Windows paths and key comments.
+    return json.dumps(value, ensure_ascii=False)
+
+
+def render_inventory(args: argparse.Namespace) -> str:
+    lines = [
+        "---",
+        "all:",
+        "  children:",
+        "    ssh_key_supported:",
+        "      hosts:",
+        "        # CUSTOMIZE: Rename this inventory alias if needed.",
+        f"        {yaml_scalar(args.host_alias)}:",
+        "          # CUSTOMIZE: Confirm the target address or resolvable name.",
+        f"          ansible_host: {yaml_scalar(args.host)}",
+        "          # CUSTOMIZE: Confirm the ordinary OpenSSH connection account.",
+        f"          ansible_user: {yaml_scalar(args.connection_user)}",
+        "          # CUSTOMIZE: Confirm the managed operating-system family.",
+        f"          ssh_key_platform: {yaml_scalar(args.platform)}",
+        "          # CUSTOMIZE: Confirm the account that owns the key file.",
+        f"          ssh_key_owner: {yaml_scalar(args.managed_owner)}",
+        "          # CUSTOMIZE: Confirm the absolute authorized_keys path.",
+        f"          ssh_authorized_keys_path: {yaml_scalar(args.authorized_keys_path)}",
+        "          # CUSTOMIZE: Set true only when the connection account "
+        "needs elevation.",
+        f"          ssh_key_become: {yaml_scalar(args.become)}",
+        "          # CUSTOMIZE: Keep true only when this tool may create "
+        "the key directory.",
+        "          ssh_key_manage_directory: true",
+        "          # CUSTOMIZE: Keep true only when this host may change the key file.",
+        "          ssh_key_write_enabled: true",
+    ]
     if args.platform == "windows":
-        variables.update(
-            {
-                "ansible_connection": "ssh",
-                "ansible_shell_type": "powershell",
-                "ssh_key_windows_account_type": args.windows_account_type,
-            }
+        lines.extend(
+            (
+                "          ansible_connection: ssh",
+                "          ansible_shell_type: powershell",
+                "          # CUSTOMIZE: Confirm standard or administrator "
+                "key-file handling.",
+                "          ssh_key_windows_account_type: "
+                f"{yaml_scalar(args.windows_account_type)}",
+            )
         )
         if args.become:
-            variables["ansible_become_method"] = "runas"
-            variables["ansible_become_user"] = args.become_user
-
-    return {
-        "all": {
-            "children": {
-                "ssh_key_supported": {"hosts": {args.host_alias: variables}},
-                "ssh_key_unknown": {"hosts": {}},
-                "ssh_identity_runtime_targets": {"hosts": {}},
-            }
-        }
-    }
-
-
-def identity_payload(
-    args: argparse.Namespace, public_key: str, fingerprint: str
-) -> dict[str, Any]:
-    return {
-        "ssh_identity": {
-            "id": args.identity_id,
-            "display_name": args.display_name,
-            "fingerprint": fingerprint,
-            "current_public_key": public_key,
-            "target_hosts": [args.host_alias],
-            "rotation": {
-                "replacement_public_key": "",
-                "operator_verified": False,
-            },
-        }
-    }
+            lines.extend(
+                (
+                    "          ansible_become_method: runas",
+                    "          # CUSTOMIZE: Confirm the Windows account used "
+                    "for elevation.",
+                    f"          ansible_become_user: {yaml_scalar(args.become_user)}",
+                )
+            )
+    lines.extend(
+        (
+            "    ssh_key_unknown:",
+            "      hosts: {}",
+            "    ssh_identity_runtime_targets:",
+            "      hosts: {}",
+            "",
+        )
+    )
+    return "\n".join(lines)
 
 
-def rendered_yaml(payload: dict[str, Any], comments: tuple[str, ...]) -> str:
-    header = "---\n" + "\n".join(f"# CUSTOMIZE: {comment}" for comment in comments)
-    return header + "\n" + yaml.safe_dump(payload, sort_keys=False, width=1000)
+def render_identity(args: argparse.Namespace, public_key: str, fingerprint: str) -> str:
+    return "\n".join(
+        (
+            "---",
+            "ssh_identity:",
+            "  # CUSTOMIZE: Confirm the stable identity ID matches this filename.",
+            f"  id: {yaml_scalar(args.identity_id)}",
+            "  # CUSTOMIZE: Confirm the human-readable owner or device label.",
+            f"  display_name: {yaml_scalar(args.display_name)}",
+            "  # CUSTOMIZE: Verify this fingerprint against the public-key file.",
+            f"  fingerprint: {yaml_scalar(fingerprint)}",
+            "  # CUSTOMIZE: Confirm this is one complete public key, never "
+            "a private key.",
+            f"  current_public_key: {yaml_scalar(public_key)}",
+            "  target_hosts:",
+            "    # CUSTOMIZE: Keep the exact inventory aliases that use this identity.",
+            f"    - {yaml_scalar(args.host_alias)}",
+            "  rotation:",
+            "    # CUSTOMIZE: Add a distinct replacement public key when "
+            "rotation starts.",
+            '    replacement_public_key: ""',
+            "    # CUSTOMIZE: Keep false until replacement login succeeds everywhere.",
+            "    operator_verified: false",
+            "",
+        )
+    )
 
 
 def install_two_files(files: tuple[tuple[Path, str], tuple[Path, str]]) -> None:
@@ -177,22 +213,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         validate_args(args)
         public_key, fingerprint = public_key_data(args.public_key_file)
-        inventory = rendered_yaml(
-            inventory_payload(args),
-            (
-                "Confirm the host alias and target address.",
-                "Confirm the connection account and managed key owner.",
-                "Confirm the authorized-key path and elevation setting.",
-            ),
-        )
-        identity = rendered_yaml(
-            identity_payload(args, public_key, fingerprint),
-            (
-                "Confirm the identity ID, display name, and public-key fingerprint.",
-                "Confirm the complete public key and exact host allowlist.",
-                "Keep operator_verified false until replacement login testing passes.",
-            ),
-        )
+        inventory = render_inventory(args)
+        identity = render_identity(args, public_key, fingerprint)
         install_two_files(
             (
                 (args.inventory_output, inventory),
