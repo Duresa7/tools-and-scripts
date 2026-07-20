@@ -1,7 +1,22 @@
+import importlib.util
 import sqlite3
+import sys
 from pathlib import Path
 
-from semaphore.semaphore_sqlite import backup_database, compare_databases
+MODULE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "backup-and-recovery"
+    / "semaphore-sqlite-guard"
+    / "semaphore_sqlite.py"
+)
+SPEC = importlib.util.spec_from_file_location("semaphore_sqlite_guard", MODULE_PATH)
+assert SPEC and SPEC.loader
+MODULE = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = MODULE
+SPEC.loader.exec_module(MODULE)
+
+backup_database = MODULE.backup_database
+compare_databases = MODULE.compare_databases
 
 SCHEMA = """
 CREATE TABLE project (id INTEGER PRIMARY KEY, name TEXT, type TEXT);

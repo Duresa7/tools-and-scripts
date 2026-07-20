@@ -6,7 +6,7 @@ from pathlib import Path
 
 VALIDATOR_PATH = (
     Path(__file__).resolve().parents[1]
-    / "ansible"
+    / "identity-and-access"
     / "ssh-key-rotation"
     / "tests"
     / "validate_project.py"

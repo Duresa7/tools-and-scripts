@@ -16,6 +16,9 @@ channels.json
 *.sqlite3
 *.db
 *.backup
+config.local.conf
+config.local.json
+config.local.toml
 
-ansible/ssh-key-rotation/identities/*.yml
-ansible/ssh-key-rotation/inventory/hosts.yml
+identity-and-access/ssh-key-rotation/identities/*.yml
+identity-and-access/ssh-key-rotation/inventory/hosts.yml

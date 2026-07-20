@@ -6,24 +6,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 MARKER_COUNTS = {
-    "ansible/ssh-key-rotation/identities/_identity-template.yml.example": 8,
-    "ansible/ssh-key-rotation/inventory/hosts.yml.example": 7,
-    "networkmanager/networkmanager-ifupdown-cutover.sh": 1,
+    "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 8,
+    "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 7,
+    "networking/networkmanager-cutover/networkmanager-ifupdown-cutover.sh": 1,
 }
 
 HELP_CASES = (
     (
-        "prometheus/check_targets.py",
+        "monitoring/prometheus-target-check/check_targets.py",
         ("--help",),
         ("replace its jobs and URLs",),
     ),
     (
-        "semaphore/semaphore_sqlite.py",
+        "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
         ("backup", "--help"),
         ("your live Semaphore SQLite database", "must not already exist"),
     ),
     (
-        "teamspeak/teamspeak_channels.py",
+        "migrations/teamspeak-channel-migration/teamspeak_channels.py",
         ("export", "--help"),
         (
             "ClientQuery host",
@@ -31,18 +31,18 @@ HELP_CASES = (
         ),
     ),
     (
-        "teamspeak/teamspeak_channels.py",
+        "migrations/teamspeak-channel-migration/teamspeak_channels.py",
         ("import", "--help"),
         ("target ServerQuery host", "environment variable containing your ServerQuery"),
     ),
 )
 
 TOOL_READMES = (
-    "ansible/ssh-key-rotation/README.md",
-    "networkmanager/README.md",
-    "prometheus/README.md",
-    "semaphore/README.md",
-    "teamspeak/README.md",
+    "identity-and-access/ssh-key-rotation/README.md",
+    "networking/networkmanager-cutover/README.md",
+    "monitoring/prometheus-target-check/README.md",
+    "backup-and-recovery/semaphore-sqlite-guard/README.md",
+    "migrations/teamspeak-channel-migration/README.md",
 )
 
 
@@ -55,7 +55,7 @@ def test_user_supplied_configuration_has_customize_markers() -> None:
 
 
 def test_prometheus_example_explains_its_placeholders() -> None:
-    path = ROOT / "prometheus/expected-targets.example.json"
+    path = ROOT / "monitoring/prometheus-target-check/expected-targets.example.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
 
     assert payload["_comment"].startswith("CUSTOMIZE:")
@@ -91,10 +91,17 @@ def test_every_tool_readme_has_a_customization_section() -> None:
 
 
 def test_documented_commands_use_copied_local_configuration() -> None:
-    prometheus_readme = (ROOT / "prometheus/README.md").read_text(encoding="utf-8")
-    ansible_readme = (ROOT / "ansible/ssh-key-rotation/README.md").read_text(
-        encoding="utf-8"
-    )
+    prometheus_readme = (
+        ROOT / "monitoring/prometheus-target-check/README.md"
+    ).read_text(encoding="utf-8")
+    ansible_readme = (
+        ROOT / "identity-and-access/ssh-key-rotation/README.md"
+    ).read_text(encoding="utf-8")
 
-    assert prometheus_readme.count("--expect prometheus/expected-targets.json") == 2
+    assert (
+        prometheus_readme.count(
+            "--expect monitoring/prometheus-target-check/expected-targets.json"
+        )
+        == 2
+    )
     assert "cp inventory/hosts.yml.example inventory/hosts.yml" in ansible_readme

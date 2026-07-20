@@ -40,7 +40,7 @@ sudo nmcli connection show server-static
 ## Run preflight
 
 ```bash
-sudo networkmanager/networkmanager-ifupdown-cutover.sh \
+sudo networking/networkmanager-cutover/networkmanager-ifupdown-cutover.sh \
   --interface ens18 \
   --connection server-static \
   --candidate /root/interfaces.networkmanager \

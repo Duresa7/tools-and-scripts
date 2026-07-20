@@ -1,22 +1,36 @@
+import importlib.util
 import os
 import stat
+import sys
 from io import BytesIO
 from pathlib import Path
 
 import pytest
 
-from teamspeak.teamspeak_channels import (
-    QueryError,
-    TS3Connection,
-    channelcreate_command,
-    credential,
-    normalize_channels,
-    order_channels,
-    parse_record,
-    ts3_escape,
-    ts3_unescape,
-    write_export,
+MODULE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "migrations"
+    / "teamspeak-channel-migration"
+    / "teamspeak_channels.py"
 )
+SPEC = importlib.util.spec_from_file_location(
+    "teamspeak_channel_migration", MODULE_PATH
+)
+assert SPEC and SPEC.loader
+MODULE = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = MODULE
+SPEC.loader.exec_module(MODULE)
+
+QueryError = MODULE.QueryError
+TS3Connection = MODULE.TS3Connection
+channelcreate_command = MODULE.channelcreate_command
+credential = MODULE.credential
+normalize_channels = MODULE.normalize_channels
+order_channels = MODULE.order_channels
+parse_record = MODULE.parse_record
+ts3_escape = MODULE.ts3_escape
+ts3_unescape = MODULE.ts3_unescape
+write_export = MODULE.write_export
 
 
 def test_escape_round_trip() -> None:

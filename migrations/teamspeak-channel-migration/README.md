@@ -15,7 +15,7 @@ Enable the ClientQuery plugin in the TeamSpeak 3 desktop client, connect to the 
 ```bash
 read -rsp 'ClientQuery API key: ' TS3_CLIENTQUERY_API_KEY
 export TS3_CLIENTQUERY_API_KEY
-python teamspeak/teamspeak_channels.py export --output channels.json
+python migrations/teamspeak-channel-migration/teamspeak_channels.py export --output channels.json
 unset TS3_CLIENTQUERY_API_KEY
 ```
 
@@ -26,7 +26,7 @@ Use `--handler-id` when several server tabs are open. The default ClientQuery en
 The dry run reads and validates the JSON without opening a network connection:
 
 ```bash
-python teamspeak/teamspeak_channels.py import \
+python migrations/teamspeak-channel-migration/teamspeak_channels.py import \
   --input channels.json \
   --dry-run
 ```
@@ -38,7 +38,7 @@ Set the target credential, then run the import against the target's LAN or local
 ```bash
 read -rsp 'ServerQuery password: ' TS3_SERVERQUERY_PASSWORD
 export TS3_SERVERQUERY_PASSWORD
-python teamspeak/teamspeak_channels.py import \
+python migrations/teamspeak-channel-migration/teamspeak_channels.py import \
   --input channels.json \
   --host 192.0.2.40 \
   --port 10011 \

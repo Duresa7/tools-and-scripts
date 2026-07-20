@@ -17,7 +17,7 @@ Create the destination directory first, then choose a destination file that does
 
 ```bash
 install -d -m 0700 /root/semaphore-backups/pre-upgrade
-python semaphore/semaphore_sqlite.py backup \
+python backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py backup \
   /var/lib/semaphore/database.sqlite \
   /root/semaphore-backups/pre-upgrade/database.sqlite
 ```
@@ -25,7 +25,7 @@ python semaphore/semaphore_sqlite.py backup \
 ## Compare state after a change
 
 ```bash
-python semaphore/semaphore_sqlite.py compare \
+python backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py compare \
   /var/lib/semaphore/database.sqlite \
   /root/semaphore-backups/pre-upgrade/database.sqlite \
   --require-secret-records

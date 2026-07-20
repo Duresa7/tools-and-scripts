@@ -7,7 +7,7 @@
 Copy `expected-targets.example.json` to `expected-targets.json` and follow its `_comment` fields. Replace the job names and scrape URLs with the exact values shown by your Prometheus `/api/v1/targets` endpoint. Add every target you expect, remove the examples, list any retired address fragments under `forbidden_substrings`, and normally leave `required_health` set to `up`. You do not need to edit `check_targets.py`.
 
 ```bash
-cp prometheus/expected-targets.example.json prometheus/expected-targets.json
+cp monitoring/prometheus-target-check/expected-targets.example.json monitoring/prometheus-target-check/expected-targets.json
 ```
 
 ## Usage
@@ -16,16 +16,16 @@ Pipe a local Prometheus response into the checker:
 
 ```bash
 curl -fsS http://127.0.0.1:9090/api/v1/targets \
-  | python prometheus/check_targets.py \
-      --expect prometheus/expected-targets.json
+  | python monitoring/prometheus-target-check/check_targets.py \
+      --expect monitoring/prometheus-target-check/expected-targets.json
 ```
 
 The script can fetch the API itself:
 
 ```bash
-python prometheus/check_targets.py \
+python monitoring/prometheus-target-check/check_targets.py \
   --url http://127.0.0.1:9090/api/v1/targets \
-  --expect prometheus/expected-targets.json
+  --expect monitoring/prometheus-target-check/expected-targets.json
 ```
 
 Repeated job names are supported when their scrape URLs differ.
@@ -38,4 +38,4 @@ Repeated job names are supported when their scrape URLs differ.
 | `1` | Input, JSON, HTTP, or expectation parsing failed |
 | `2` | One or more target assertions failed |
 
-The output prints one pipe-delimited row per target so a runbook or CI log retains the observed job, health, URL, and last error.
+The output prints one pipe-delimited row per target so a runbook or captured command log retains the observed job, health, URL, and last error.

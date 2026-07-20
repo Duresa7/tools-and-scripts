@@ -24,7 +24,7 @@ Copy `inventory/hosts.yml.example` to the ignored local file `inventory/hosts.ym
 Install the pinned collections:
 
 ```bash
-cd ansible/ssh-key-rotation
+cd identity-and-access/ssh-key-rotation
 ansible-galaxy collection install --requirements-file requirements.yml
 ```
 
