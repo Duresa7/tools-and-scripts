@@ -1,6 +1,13 @@
 [tool.pytest.ini_options]
 addopts = "-ra"
-testpaths = ["tests"]
+testpaths = [
+  "tests",
+  "networking/networkmanager-cutover/tests",
+  "monitoring/prometheus-target-check/tests",
+  "backup-and-recovery/semaphore-sqlite-guard/tests",
+  "migrations/teamspeak-channel-migration/tests",
+  "identity-and-access/ssh-key-rotation/tests",
+]
 
 [tool.ruff]
 line-length = 88

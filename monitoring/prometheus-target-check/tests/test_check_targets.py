@@ -8,12 +8,7 @@ from pathlib import Path
 
 import pytest
 
-MODULE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "monitoring"
-    / "prometheus-target-check"
-    / "check_targets.py"
-)
+MODULE_PATH = Path(__file__).resolve().parents[1] / "check_targets.py"
 SPEC = importlib.util.spec_from_file_location("prometheus_target_check", MODULE_PATH)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)

@@ -4,7 +4,9 @@ set -Eeuo pipefail
 export LC_ALL=C
 
 readonly confirmation_phrase='CUTOVER_NETWORK_CONNECTION'
-script_dir=$(cd -- "${BASH_SOURCE[0]%/*}" && pwd -P)
+script_path=${BASH_SOURCE[0]}
+script_parent=$([[ $script_path == */* ]] && printf '%s' "${script_path%/*}" || printf '.')
+script_dir=$(cd -- "$script_parent" && pwd -P)
 
 stack=''
 interface=''

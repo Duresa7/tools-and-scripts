@@ -3,7 +3,9 @@ set -Eeuo pipefail
 
 export LC_ALL=C
 
-script_dir=$(cd -- "${BASH_SOURCE[0]%/*}" && pwd -P)
+script_path=${BASH_SOURCE[0]}
+script_parent=$([[ $script_path == */* ]] && printf '%s' "${script_path%/*}" || printf '.')
+script_dir=$(cd -- "$script_parent" && pwd -P)
 output_file="$script_dir/config.local.conf"
 print_only=false
 

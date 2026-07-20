@@ -7,13 +7,7 @@ from pathlib import Path
 
 import yaml
 
-VALIDATOR_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "identity-and-access"
-    / "ssh-key-rotation"
-    / "tests"
-    / "validate_project.py"
-)
+VALIDATOR_PATH = Path(__file__).with_name("validate_project.py")
 SPEC = importlib.util.spec_from_file_location("ssh_key_validator", VALIDATOR_PATH)
 assert SPEC and SPEC.loader
 VALIDATOR = importlib.util.module_from_spec(SPEC)

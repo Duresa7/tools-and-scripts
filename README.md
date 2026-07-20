@@ -11,6 +11,7 @@ Small utilities for DevOps, IT operations, security work, migrations, and self-h
 - [Status and safety](#status-and-safety)
 - [Configuration rules](#configuration-rules)
 - [Local checks](#local-checks)
+- [Adding a tool](#adding-a-tool)
 - [License](#license)
 
 ## Quick start
@@ -36,6 +37,12 @@ py -m pip install -r requirements-dev.txt
 ```
 
 You don't need the whole repository to run one tool. Download its folder and keep the files together.
+
+Run the complete repository check before editing or sharing a tool:
+
+```bash
+python check.py
+```
 
 ## Tool catalog
 
@@ -85,16 +92,18 @@ Examples use RFC 5737 addresses such as `192.0.2.10`; those addresses aren't liv
 
 ## Local checks
 
-Development checks run locally. Install the development requirements, then run the Python suite:
+`python check.py` is the only complete verification command. It runs the Python tests and formatter checks, compiles Python files, parses Markdown links and example configurations, checks every command's help, validates Bash and PowerShell syntax, runs ShellCheck, validates and lints the Ansible project, checks every Ansible playbook's syntax, and scans the complete Git history with Gitleaks.
 
 ```bash
 python -m pip install -r requirements-dev.txt
-python -m pytest
-ruff check .
-ruff format --check .
+python check.py
 ```
 
-The repository will add one strict `python check.py` entry point after the tool-specific configuration work is complete. ShellCheck, Ansible validation, PowerShell parsing, and full-history secret scanning remain local requirements.
+The command doesn't skip a missing checker. It fails with the required installation step. On Windows, Bash, ShellCheck, Ansible Core, and Ansible Lint run inside WSL because Ansible controllers are Linux-based.
+
+## Adding a tool
+
+[Future tool template](TOOL-TEMPLATE.md) defines the folder layout, required README sections, configuration rules, safety metadata, comment policy, and minimum tests.
 
 ## License
 

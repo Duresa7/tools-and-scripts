@@ -1,8 +1,7 @@
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-TOOL = ROOT / "networking" / "networkmanager-cutover"
+TOOL = Path(__file__).resolve().parents[1]
 
 
 def test_networkmanager_tool_is_self_contained() -> None:
@@ -26,15 +25,11 @@ def test_networkmanager_tool_is_self_contained() -> None:
 
 def test_networkmanager_help_names_all_execution_modes() -> None:
     completed = subprocess.run(
-        [
-            "bash",
-            "networking/networkmanager-cutover/networkmanager-cutover.sh",
-            "--help",
-        ],
+        ["bash", "networkmanager-cutover.sh", "--help"],
         check=False,
         capture_output=True,
         text=True,
-        cwd=ROOT,
+        cwd=TOOL,
     )
 
     assert completed.returncode == 0, completed.stderr

@@ -9,12 +9,7 @@ from pathlib import Path
 
 import pytest
 
-MODULE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "migrations"
-    / "teamspeak-channel-migration"
-    / "teamspeak_channels.py"
-)
+MODULE_PATH = Path(__file__).resolve().parents[1] / "teamspeak_channels.py"
 SPEC = importlib.util.spec_from_file_location(
     "teamspeak_channel_migration", MODULE_PATH
 )
