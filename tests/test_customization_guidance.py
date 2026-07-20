@@ -9,13 +9,14 @@ MARKER_COUNTS = {
     "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 8,
     "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 7,
     "networking/networkmanager-cutover/config.example.conf": 10,
+    "monitoring/prometheus-target-check/config.example.json": 10,
 }
 
 HELP_CASES = (
     (
         "monitoring/prometheus-target-check/check_targets.py",
         ("--help",),
-        ("replace its jobs and URLs",),
+        ("local JSON configuration", "bearer-token environment variable"),
     ),
     (
         "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
@@ -55,16 +56,18 @@ def test_user_supplied_configuration_has_customize_markers() -> None:
 
 
 def test_prometheus_example_explains_its_placeholders() -> None:
-    path = ROOT / "monitoring/prometheus-target-check/expected-targets.example.json"
+    path = ROOT / "monitoring/prometheus-target-check/config.example.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
 
     assert payload["_comment"].startswith("CUSTOMIZE:")
-    assert all(
-        target["_comment"].startswith("CUSTOMIZE:")
-        for target in payload["expected_targets"]
-    )
-    assert payload["_forbidden_substrings_comment"].startswith("CUSTOMIZE:")
-    assert payload["_required_health_comment"].startswith("CUSTOMIZE:")
+    comment_values = [
+        value
+        for section in (payload["prometheus"], payload["expectations"])
+        for key, value in section.items()
+        if key.startswith("_comment")
+    ]
+    assert len(comment_values) == 9
+    assert all(value.startswith("CUSTOMIZE:") for value in comment_values)
 
 
 def test_command_help_identifies_environment_specific_inputs() -> None:
@@ -101,10 +104,6 @@ def test_documented_commands_use_copied_local_configuration() -> None:
         ROOT / "identity-and-access/ssh-key-rotation/README.md"
     ).read_text(encoding="utf-8")
 
-    assert (
-        prometheus_readme.count(
-            "--expect monitoring/prometheus-target-check/expected-targets.json"
-        )
-        == 2
-    )
+    assert "config.example.json" in prometheus_readme
+    assert "config.local.json" in prometheus_readme
     assert "cp inventory/hosts.yml.example inventory/hosts.yml" in ansible_readme

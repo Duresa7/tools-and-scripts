@@ -1,0 +1,32 @@
+{
+  "_comment": "CUSTOMIZE: Copy this file to config.local.json and review every field below.",
+  "prometheus": {
+    "_comment_url": "CUSTOMIZE: Set the full Prometheus /api/v1/targets endpoint.",
+    "url": "http://127.0.0.1:9090/api/v1/targets",
+    "_comment_timeout": "CUSTOMIZE: Set the request timeout in seconds.",
+    "timeout_seconds": 10,
+    "_comment_ca": "CUSTOMIZE: For a private HTTPS CA, set its local PEM path. Otherwise leave this empty.",
+    "ca_file": "",
+    "_comment_bearer": "CUSTOMIZE: Set only the environment-variable name that holds a bearer token. Never put the token here.",
+    "bearer_token_env": "",
+    "_comment_basic_user": "CUSTOMIZE: Set the basic-auth username, or leave it empty when basic auth is disabled.",
+    "basic_username": "",
+    "_comment_basic_password": "CUSTOMIZE: Set only the environment-variable name that holds the basic-auth password.",
+    "basic_password_env": ""
+  },
+  "expectations": {
+    "_comment_targets": "CUSTOMIZE: Replace this list with every job and scrape URL that should exist exactly once.",
+    "targets": [
+      {
+        "job": "node",
+        "scrape_url": "http://192.0.2.10:9100/metrics"
+      }
+    ],
+    "_comment_forbidden": "CUSTOMIZE: List stale addresses, retired names, or other substrings that must not appear in a scrape URL.",
+    "forbidden_substrings": [
+      "192.0.2.99"
+    ],
+    "_comment_health": "CUSTOMIZE: Set the only accepted Prometheus health value.",
+    "required_health": "up"
+  }
+}
