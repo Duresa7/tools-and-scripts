@@ -11,6 +11,7 @@ MARKER_COUNTS = {
     "networking/networkmanager-cutover/config.example.conf": 10,
     "monitoring/prometheus-target-check/config.example.json": 10,
     "backup-and-recovery/semaphore-sqlite-guard/config.example.toml": 4,
+    "migrations/teamspeak-channel-migration/config.example.toml": 13,
 }
 
 HELP_CASES = (

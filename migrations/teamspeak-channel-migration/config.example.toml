@@ -1,0 +1,29 @@
+[source]
+# CUSTOMIZE: Set the ClientQuery host. Keep 127.0.0.1 when the desktop client runs locally.
+host = "127.0.0.1"
+# CUSTOMIZE: Set the ClientQuery plugin TCP port.
+port = 25639
+# CUSTOMIZE: Set a server-tab handler ID, or 0 to use the first open tab.
+handler_id = 0
+# CUSTOMIZE: Set the ClientQuery timeout in seconds.
+timeout_seconds = 10
+# CUSTOMIZE: Set only the environment-variable name that holds the ClientQuery API key.
+api_key_env = "TS3_CLIENTQUERY_API_KEY"
+# CUSTOMIZE: Set the local JSON export path.
+output_path = "channels.json"
+
+[target]
+# CUSTOMIZE: Set the target ServerQuery host or IP address.
+host = "192.0.2.40"
+# CUSTOMIZE: Set the target ServerQuery TCP port.
+port = 10011
+# CUSTOMIZE: Set the target TeamSpeak virtual server ID.
+virtual_server_id = 1
+# CUSTOMIZE: Set a ServerQuery account allowed to create channels.
+query_username = ""
+# CUSTOMIZE: Set the ServerQuery timeout in seconds.
+timeout_seconds = 10
+# CUSTOMIZE: Set only the environment-variable name that holds the ServerQuery password.
+password_env = "TS3_SERVERQUERY_PASSWORD"
+# CUSTOMIZE: Set the JSON export path that import should read.
+input_path = "channels.json"

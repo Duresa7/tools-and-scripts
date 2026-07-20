@@ -7,8 +7,10 @@ import argparse
 import getpass
 import json
 import os
+import re
 import socket
 import sys
+import tomllib
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -75,6 +77,8 @@ COPY_PROPERTIES = (
     "channel_banner_mode",
 )
 
+ENVIRONMENT_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
 
 class QueryError(RuntimeError):
     """A query error that omits the command and any credential it carried."""
@@ -93,6 +97,33 @@ class ImportStats:
     created: int = 0
     skipped: int = 0
     failed: int = 0
+
+
+@dataclass(frozen=True)
+class SourceSettings:
+    host: str = "127.0.0.1"
+    port: int = 25639
+    handler_id: int | None = None
+    timeout: float = 10.0
+    api_key_env: str = "TS3_CLIENTQUERY_API_KEY"
+    output: Path = Path("channels.json")
+
+
+@dataclass(frozen=True)
+class TargetSettings:
+    host: str = "127.0.0.1"
+    port: int = 10011
+    server_id: int = 1
+    username: str = ""
+    timeout: float = 10.0
+    password_env: str = "TS3_SERVERQUERY_PASSWORD"
+    input_path: Path = Path("channels.json")
+
+
+@dataclass(frozen=True)
+class ToolSettings:
+    source: SourceSettings
+    target: TargetSettings
 
 
 def ts3_escape(value: str) -> str:
@@ -474,26 +505,191 @@ def _apply_import(
     return ImportStats(created=created, skipped=skipped, failed=failed)
 
 
+def _string(value: Any, field: str, default: str) -> str:
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a string")
+    return value
+
+
+def _positive_int(value: Any, field: str, default: int) -> int:
+    if value is None:
+        return default
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise ValueError(f"{field} must be a positive integer")
+    return value
+
+
+def _positive_float(value: Any, field: str, default: float) -> float:
+    if value is None:
+        return default
+    if not isinstance(value, int | float) or isinstance(value, bool) or value <= 0:
+        raise ValueError(f"{field} must be greater than zero")
+    return float(value)
+
+
+def _environment_name(value: Any, field: str, default: str) -> str:
+    name = _string(value, field, default)
+    if not ENVIRONMENT_NAME_PATTERN.fullmatch(name):
+        raise ValueError(f"{field} must be a valid environment-variable name")
+    return name
+
+
+def _local_path(value: Any, field: str, default: Path, base_directory: Path) -> Path:
+    text = _string(value, field, str(default))
+    if not text:
+        raise ValueError(f"{field} must not be empty")
+    path = Path(text).expanduser()
+    return path if path.is_absolute() else base_directory / path
+
+
+def parse_settings(payload: Any, base_directory: Path | None = None) -> ToolSettings:
+    if not isinstance(payload, dict):
+        raise ValueError("configuration root must be a TOML table")
+    source = payload.get("source", {})
+    target = payload.get("target", {})
+    if not isinstance(source, dict) or not isinstance(target, dict):
+        raise ValueError("[source] and [target] must be TOML tables")
+    base = (base_directory or Path.cwd()).resolve()
+
+    handler_id = source.get("handler_id")
+    if handler_id is None or handler_id == 0:
+        resolved_handler = None
+    else:
+        resolved_handler = _positive_int(handler_id, "source.handler_id", 1)
+
+    return ToolSettings(
+        source=SourceSettings(
+            host=_string(source.get("host"), "source.host", "127.0.0.1"),
+            port=_positive_int(source.get("port"), "source.port", 25639),
+            handler_id=resolved_handler,
+            timeout=_positive_float(
+                source.get("timeout_seconds"), "source.timeout_seconds", 10.0
+            ),
+            api_key_env=_environment_name(
+                source.get("api_key_env"),
+                "source.api_key_env",
+                "TS3_CLIENTQUERY_API_KEY",
+            ),
+            output=_local_path(
+                source.get("output_path"),
+                "source.output_path",
+                Path("channels.json"),
+                base,
+            ),
+        ),
+        target=TargetSettings(
+            host=_string(target.get("host"), "target.host", "127.0.0.1"),
+            port=_positive_int(target.get("port"), "target.port", 10011),
+            server_id=_positive_int(
+                target.get("virtual_server_id"), "target.virtual_server_id", 1
+            ),
+            username=_string(target.get("query_username"), "target.query_username", ""),
+            timeout=_positive_float(
+                target.get("timeout_seconds"), "target.timeout_seconds", 10.0
+            ),
+            password_env=_environment_name(
+                target.get("password_env"),
+                "target.password_env",
+                "TS3_SERVERQUERY_PASSWORD",
+            ),
+            input_path=_local_path(
+                target.get("input_path"),
+                "target.input_path",
+                Path("channels.json"),
+                base,
+            ),
+        ),
+    )
+
+
+def load_settings(path: Path | None) -> ToolSettings:
+    if path is None:
+        return ToolSettings(SourceSettings(), TargetSettings())
+    with path.open("rb") as handle:
+        return parse_settings(tomllib.load(handle), path.resolve().parent)
+
+
+def resolve_source(
+    settings: SourceSettings, args: argparse.Namespace
+) -> SourceSettings:
+    return SourceSettings(
+        host=args.host if args.host is not None else settings.host,
+        port=args.port if args.port is not None else settings.port,
+        handler_id=(
+            args.handler_id if args.handler_id is not None else settings.handler_id
+        ),
+        timeout=args.timeout if args.timeout is not None else settings.timeout,
+        api_key_env=(
+            args.api_key_env if args.api_key_env is not None else settings.api_key_env
+        ),
+        output=args.output if args.output is not None else settings.output,
+    )
+
+
+def resolve_target(
+    settings: TargetSettings, args: argparse.Namespace
+) -> TargetSettings:
+    return TargetSettings(
+        host=args.host if args.host is not None else settings.host,
+        port=args.port if args.port is not None else settings.port,
+        server_id=(
+            args.server_id if args.server_id is not None else settings.server_id
+        ),
+        username=args.username if args.username is not None else settings.username,
+        timeout=args.timeout if args.timeout is not None else settings.timeout,
+        password_env=(
+            args.password_env
+            if args.password_env is not None
+            else settings.password_env
+        ),
+        input_path=args.input if args.input is not None else settings.input_path,
+    )
+
+
+def validate_source(settings: SourceSettings) -> None:
+    if not settings.host:
+        raise ValueError("source host is required")
+    _positive_int(settings.port, "source port", 25639)
+    _positive_float(settings.timeout, "source timeout", 10.0)
+    _environment_name(settings.api_key_env, "source API key env", "")
+
+
+def validate_target(settings: TargetSettings, dry_run: bool) -> None:
+    if not settings.host:
+        raise ValueError("target host is required")
+    if not dry_run and not settings.username:
+        raise ValueError("target query username is required for a live import")
+    _positive_int(settings.port, "target port", 10011)
+    _positive_int(settings.server_id, "target server ID", 1)
+    _positive_float(settings.timeout, "target timeout", 10.0)
+    _environment_name(settings.password_env, "target password env", "")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help="local TOML settings copied from config.example.toml",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # CUSTOMIZE: Connection details and credential environment-variable names
-    # are options so users can adapt the tool without editing this source file.
     export = subparsers.add_parser("export", help="Export through ClientQuery")
     export.add_argument(
         "--host",
-        default="127.0.0.1",
+        default=None,
         help="ClientQuery host; change only when the desktop client is remote",
     )
     export.add_argument(
-        "--port", type=int, default=25639, help="ClientQuery plugin port"
+        "--port", type=int, default=None, help="ClientQuery plugin port"
     )
     export.add_argument(
         "--output",
         type=Path,
-        default=Path("channels.json"),
-        help="new export path (default: channels.json)",
+        default=None,
+        help="new export path; overrides source.output_path",
     )
     export.add_argument(
         "--handler-id",
@@ -502,37 +698,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     export.add_argument(
         "--api-key-env",
-        default="TS3_CLIENTQUERY_API_KEY",
+        default=None,
         help="environment variable containing your ClientQuery API key",
     )
     export.add_argument(
         "--force", action="store_true", help="replace an existing export file"
     )
     export.add_argument(
-        "--timeout", type=float, default=10.0, help="query timeout in seconds"
+        "--timeout", type=float, default=None, help="query timeout in seconds"
     )
 
     importer = subparsers.add_parser("import", help="Import through ServerQuery")
     importer.add_argument(
-        "--input", type=Path, required=True, help="channel export JSON to import"
+        "--input",
+        type=Path,
+        default=None,
+        help="channel export JSON; overrides target.input_path",
     )
     importer.add_argument(
         "--host",
-        default="127.0.0.1",
+        default=None,
         help="target ServerQuery host or IP address",
     )
     importer.add_argument(
-        "--port", type=int, default=10011, help="target ServerQuery TCP port"
+        "--port", type=int, default=None, help="target ServerQuery TCP port"
     )
     importer.add_argument(
-        "--server-id", type=int, default=1, help="target TeamSpeak virtual server ID"
+        "--server-id", type=int, default=None, help="target virtual server ID"
     )
     importer.add_argument(
-        "--username", default="serveradmin", help="target ServerQuery username"
+        "--username", default=None, help="target ServerQuery username"
     )
     importer.add_argument(
         "--password-env",
-        default="TS3_SERVERQUERY_PASSWORD",
+        default=None,
         help="environment variable containing your ServerQuery password",
     )
     importer.add_argument(
@@ -546,7 +745,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="reuse same-name target channels instead of failing",
     )
     importer.add_argument(
-        "--timeout", type=float, default=10.0, help="query timeout in seconds"
+        "--timeout", type=float, default=None, help="query timeout in seconds"
     )
     return parser
 
@@ -554,43 +753,46 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.timeout <= 0:
-        parser.error("--timeout must be greater than zero")
     if args.command == "import" and args.dry_run and args.skip_existing:
         parser.error("--dry-run cannot inspect the server for --skip-existing")
 
     try:
+        settings = load_settings(args.config)
         if args.command == "export":
-            api_key = credential(args.api_key_env, "ClientQuery API key: ")
+            source = resolve_source(settings.source, args)
+            validate_source(source)
+            api_key = credential(source.api_key_env, "ClientQuery API key: ")
             channels, server_name = export_channels(
-                args.host,
-                args.port,
+                source.host,
+                source.port,
                 api_key,
-                args.handler_id,
-                args.timeout,
+                source.handler_id,
+                source.timeout,
             )
-            write_export(args.output, channels, args.force)
+            write_export(source.output, channels, args.force)
             print(
                 f"exported: server={server_name!r} channels={len(channels)} "
-                f"path={args.output}"
+                f"path={source.output}"
             )
             return 0
 
-        with args.input.open(encoding="utf-8") as handle:
+        target = resolve_target(settings.target, args)
+        validate_target(target, args.dry_run)
+        with target.input_path.open(encoding="utf-8") as handle:
             channels = normalize_channels(json.load(handle))
         password = (
             None
             if args.dry_run
-            else credential(args.password_env, "ServerQuery password: ")
+            else credential(target.password_env, "ServerQuery password: ")
         )
         stats = import_channels(
             channels,
-            args.host,
-            args.port,
-            args.server_id,
-            args.username,
+            target.host,
+            target.port,
+            target.server_id,
+            target.username,
             password,
-            args.timeout,
+            target.timeout,
             args.dry_run,
             args.skip_existing,
         )
@@ -600,6 +802,7 @@ def main(argv: list[str] | None = None) -> int:
         QueryError,
         ValueError,
         json.JSONDecodeError,
+        tomllib.TOMLDecodeError,
     ) as exc:
         print(f"operation-error: {exc}", file=sys.stderr)
         return 1

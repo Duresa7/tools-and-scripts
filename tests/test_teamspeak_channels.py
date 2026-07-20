@@ -1,6 +1,8 @@
+import argparse
 import importlib.util
 import os
 import stat
+import subprocess
 import sys
 from io import BytesIO
 from pathlib import Path
@@ -22,12 +24,15 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 QueryError = MODULE.QueryError
+TargetSettings = MODULE.TargetSettings
 TS3Connection = MODULE.TS3Connection
 channelcreate_command = MODULE.channelcreate_command
 credential = MODULE.credential
 normalize_channels = MODULE.normalize_channels
 order_channels = MODULE.order_channels
 parse_record = MODULE.parse_record
+parse_settings = MODULE.parse_settings
+resolve_target = MODULE.resolve_target
 ts3_escape = MODULE.ts3_escape
 ts3_unescape = MODULE.ts3_unescape
 write_export = MODULE.write_export
@@ -153,3 +158,74 @@ def test_forced_export_replaces_the_file_atomically(tmp_path: Path) -> None:
     write_export(output, [{"cid": "1"}], force=True)
 
     assert output.read_text(encoding="utf-8") == '[\n  {\n    "cid": "1"\n  }\n]\n'
+
+
+def test_config_paths_are_relative_to_the_toml_file(tmp_path: Path) -> None:
+    settings = parse_settings(
+        {
+            "source": {"output_path": "exports/channels.json"},
+            "target": {"input_path": "imports/channels.json"},
+        },
+        tmp_path,
+    )
+
+    assert settings.source.output == tmp_path / "exports" / "channels.json"
+    assert settings.target.input_path == tmp_path / "imports" / "channels.json"
+
+
+def test_cli_target_values_override_local_config() -> None:
+    configured = TargetSettings(
+        host="192.0.2.40",
+        port=10011,
+        server_id=1,
+        username="configured-account",
+        timeout=10.0,
+        password_env="CONFIGURED_PASSWORD",
+        input_path=Path("configured.json"),
+    )
+    args = argparse.Namespace(
+        host="192.0.2.41",
+        port=10012,
+        server_id=2,
+        username="cli-account",
+        timeout=3.0,
+        password_env="CLI_PASSWORD",
+        input=Path("cli.json"),
+    )
+
+    resolved = resolve_target(configured, args)
+
+    assert resolved.host == "192.0.2.41"
+    assert resolved.port == 10012
+    assert resolved.server_id == 2
+    assert resolved.username == "cli-account"
+    assert resolved.password_env == "CLI_PASSWORD"
+    assert resolved.input_path == Path("cli.json")
+
+
+def test_live_import_requires_an_explicit_query_username() -> None:
+    with pytest.raises(ValueError, match="query username"):
+        MODULE.validate_target(TargetSettings(), dry_run=False)
+
+
+def test_configurator_is_local_by_default_and_refuses_overwrite(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "config.local.toml"
+    command = [
+        sys.executable,
+        str(MODULE_PATH.with_name("configure.py")),
+        "--output",
+        str(output),
+    ]
+
+    first = subprocess.run(command, check=False, capture_output=True, text=True)
+    second = subprocess.run(command, check=False, capture_output=True, text=True)
+
+    assert first.returncode == 0, first.stderr
+    assert "remote-discovery=skipped" in first.stdout
+    assert second.returncode == 1
+    serialized = output.read_text(encoding="utf-8")
+    assert 'query_username = ""' in serialized
+    assert "client_login_password=" not in serialized
+    assert MODULE.load_settings(output).target.username == ""
