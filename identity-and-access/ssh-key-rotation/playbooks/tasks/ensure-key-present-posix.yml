@@ -1,8 +1,10 @@
 ---
 - name: Add the selected public key without removing existing keys
   ansible.posix.authorized_key:
-    user: "{{ ansible_user }}"
+    user: "{{ ssh_key_owner }}"
+    path: "{{ ssh_authorized_keys_path }}"
     key: "{{ ssh_public_key_to_manage }}"
     state: present
     exclusive: false
-    manage_dir: true
+    manage_dir: "{{ ssh_key_manage_directory | default(true) | bool }}"
+  become: "{{ ssh_key_become | default(false) | bool }}"

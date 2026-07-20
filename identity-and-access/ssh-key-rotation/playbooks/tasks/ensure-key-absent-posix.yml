@@ -1,6 +1,8 @@
 ---
 - name: Remove only the exact selected public key
   ansible.posix.authorized_key:
-    user: "{{ ansible_user }}"
+    user: "{{ ssh_key_owner }}"
+    path: "{{ ssh_authorized_keys_path }}"
     key: "{{ ssh_public_key_to_manage }}"
     state: absent
+  become: "{{ ssh_key_become | default(false) | bool }}"

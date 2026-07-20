@@ -6,8 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 MARKER_COUNTS = {
-    "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 8,
-    "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 7,
+    "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 7,
+    "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 12,
     "networking/networkmanager-cutover/config.example.conf": 10,
     "monitoring/prometheus-target-check/config.example.json": 10,
     "backup-and-recovery/semaphore-sqlite-guard/config.example.toml": 4,

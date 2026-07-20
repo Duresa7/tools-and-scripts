@@ -1,23 +1,19 @@
 ---
-# CUSTOMIZE: Copy this file to identities/<identity-id>.yml and replace every
-# example value. The file name and id must use the same lowercase identifier.
-# Only a public key belongs here. Never paste a private key.
+# Copy this file to identities/<identity-id>.yml. Only public-key data belongs here.
 ssh_identity:
-  # CUSTOMIZE: Use the identity file name without the .yml extension.
-  id: admin-laptop
-  # CUSTOMIZE: Choose a label that tells you which person or device owns the key.
-  display_name: Admin Laptop
+  # CUSTOMIZE: Match the lowercase identity filename without .yml.
+  id: workstation-key
+  # CUSTOMIZE: Name the person or device that owns this public key.
+  display_name: Workstation key
   # CUSTOMIZE: Run `ssh-keygen -lf <public-key-file>` and copy its SHA256 value.
   fingerprint: SHA256:REPLACE_WITH_PUBLIC_KEY_FINGERPRINT
-  # CUSTOMIZE: Paste the complete public-key line. Never paste the private key.
-  current_public_key: ssh-ed25519 REPLACE_WITH_PUBLIC_KEY_DATA admin-laptop
-  # CUSTOMIZE: List exact host aliases from inventory/hosts.yml. The playbooks
-  # reject any target that is not in this identity-specific allowlist.
+  # CUSTOMIZE: Paste one complete public-key line. Never paste a private key.
+  current_public_key: ssh-ed25519 REPLACE_WITH_PUBLIC_KEY_DATA workstation-key
+  # CUSTOMIZE: List exact aliases from inventory/hosts.yml.
   target_hosts:
-    - linux-example
+    - posix-standard-example
   rotation:
-    # CUSTOMIZE: During rotation, leave empty until a new key is ready to stage.
+    # CUSTOMIZE: Leave empty until a distinct replacement public key is ready.
     replacement_public_key: ''
-    # CUSTOMIZE: After testing, set true only when the replacement login works
-    # from its owner device to every target in target_hosts.
+    # CUSTOMIZE: Set true only after replacement login succeeds on every target.
     operator_verified: false

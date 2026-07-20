@@ -1,48 +1,11 @@
 ---
-- name: Add the selected Windows public key without removing existing keys
+- name: Add the selected Windows public key and enforce its ACL
   ansible.windows.win_powershell:
     parameters:
       Path: "{{ ssh_authorized_keys_path }}"
       PublicKey: "{{ ssh_public_key_to_manage }}"
-    script: |
-      [CmdletBinding(SupportsShouldProcess)]
-      param([string]$Path, [string]$PublicKey)
-      function Get-KeyMaterial {
-        param([string]$Line)
-        $parts = @($Line.Trim() -split '\s+')
-        for ($index = 0; $index -lt ($parts.Count - 1); $index++) {
-          if ($parts[$index] -match '^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521))$') {
-            return $parts[$index] + ' ' + $parts[$index + 1]
-          }
-        }
-        return $null
-      }
-      $targetMaterial = Get-KeyMaterial -Line $PublicKey
-      if (-not $targetMaterial) { throw 'Invalid public key' }
-      $created = -not (Test-Path -LiteralPath $Path -PathType Leaf)
-      $directory = Split-Path -Parent $Path
-      if (-not $Ansible.CheckMode -and -not (Test-Path -LiteralPath $directory -PathType Container)) {
-        New-Item -ItemType Directory -Path $directory -Force | Out-Null
-      }
-      $lines = @()
-      if (-not $created) { $lines = @(Get-Content -LiteralPath $Path -ErrorAction Stop) }
-      $present = $false
-      foreach ($line in $lines) {
-        if ((Get-KeyMaterial -Line $line) -eq $targetMaterial) {
-          $present = $true
-        }
-      }
-      if (-not $present) {
-        $Ansible.Changed = $true
-        if (-not $Ansible.CheckMode) {
-          $updated = @($lines) + $PublicKey.Trim()
-          [System.IO.File]::WriteAllLines($Path, $updated, [System.Text.UTF8Encoding]::new($false))
-        }
-      } else {
-        $Ansible.Changed = $false
-      }
-      if ($created -and -not $Ansible.CheckMode -and $Path -like '*administrators_authorized_keys') {
-        & icacls.exe $Path /inheritance:r /grant '*S-1-5-32-544:F' /grant '*S-1-5-18:F' | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw 'Failed to secure administrators_authorized_keys ACL' }
-      }
-      $Ansible.Result = @{ present = $true }
+      Owner: "{{ ssh_key_owner }}"
+      AccountType: "{{ ssh_key_windows_account_type }}"
+      State: present
+    script: "{{ lookup('ansible.builtin.file', playbook_dir + '/files/Manage-AuthorizedKey.ps1') }}"
+  become: "{{ ssh_key_become | default(false) | bool }}"

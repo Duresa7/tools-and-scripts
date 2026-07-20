@@ -23,4 +23,8 @@
               else 'not configured'
             }}
           authorized_keys_path: "{{ ssh_authorized_keys_path }}"
+          connection_account: "{{ ansible_user }}"
+          managed_key_owner: "{{ ssh_key_owner }}"
+          privilege_escalation: "{{ ssh_key_become | default(false) | bool }}"
+          windows_acl_valid: "{{ ssh_authorized_keys_acl_valid }}"
           write_mode: "{{ 'managed' if (ssh_key_write_enabled | default(true) | bool) else 'shared verification only' }}"

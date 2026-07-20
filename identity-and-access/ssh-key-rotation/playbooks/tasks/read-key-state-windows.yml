@@ -1,40 +1,19 @@
 ---
-- name: Read the Windows authorized-keys file
+- name: Read the Windows authorized-key state and ACL
   ansible.windows.win_powershell:
     parameters:
       Path: "{{ ssh_authorized_keys_path }}"
-    script: |
-      [CmdletBinding(SupportsShouldProcess)]
-      param([string]$Path)
-      function Get-KeyMaterial {
-        param([string]$Line)
-        $parts = @($Line.Trim() -split '\s+')
-        for ($index = 0; $index -lt ($parts.Count - 1); $index++) {
-          if ($parts[$index] -match '^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521))$') {
-            return $parts[$index] + ' ' + $parts[$index + 1]
-          }
-        }
-        return $null
-      }
-      $exists = Test-Path -LiteralPath $Path -PathType Leaf
-      $materials = @()
-      if ($exists) {
-        foreach ($line in (Get-Content -LiteralPath $Path -ErrorAction Stop)) {
-          $material = Get-KeyMaterial -Line $line
-          if ($material) { $materials += $material }
-        }
-      }
-      $Ansible.Changed = $false
-      $Ansible.Result = @{
-        exists = $exists
-        materials = $materials
-      }
+      Owner: "{{ ssh_key_owner }}"
+      AccountType: "{{ ssh_key_windows_account_type }}"
+    script: "{{ lookup('ansible.builtin.file', playbook_dir + '/files/Read-AuthorizedKeyState.ps1') }}"
   register: ssh_windows_key_state
   no_log: true
+  become: "{{ ssh_key_become | default(false) | bool }}"
 
 - name: Record selected identity state
   ansible.builtin.set_fact:
     ssh_authorized_key_materials: "{{ ssh_windows_key_state.result.materials }}"
+    ssh_authorized_keys_acl_valid: "{{ ssh_windows_key_state.result.acl_valid }}"
     ssh_current_key_present: "{{ hostvars['localhost'].ssh_identity_current_material in ssh_windows_key_state.result.materials }}"
     ssh_replacement_key_present: >-
       {{

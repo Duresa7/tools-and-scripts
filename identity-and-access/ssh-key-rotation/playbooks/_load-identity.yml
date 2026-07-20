@@ -13,7 +13,7 @@
           - ssh_identity is string
           - ssh_identity is match('^[a-z0-9][a-z0-9-]*$')
           - ssh_operation in ['audit', 'onboard', 'stage', 'verify', 'retire']
-        fail_msg: Supply a lowercase identity name such as admin-laptop.
+        fail_msg: Supply the lowercase identity ID from its YAML filename.
 
     - name: Check that the identity file exists
       ansible.builtin.stat:

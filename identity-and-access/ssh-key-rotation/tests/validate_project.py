@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import base64
 import binascii
 import hashlib
@@ -16,6 +17,10 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 IDENTITY_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 WINDOWS_ABSOLUTE_PATH = re.compile(r"^[A-Za-z]:\\")
+WINDOWS_ADMIN_KEYS_PATH = re.compile(
+    r"^[A-Za-z]:\\ProgramData\\ssh\\administrators_authorized_keys$",
+    re.IGNORECASE,
+)
 PUBLIC_KEY_TYPE_PATTERN = re.compile(
     r"^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521))$"
 )
@@ -28,6 +33,7 @@ PLAYBOOKS = (
     "ssh-key-verify.yml",
 )
 TASK_FAMILIES = ("ensure-key-absent", "ensure-key-present", "read-key-state")
+POWERSHELL_FILES = ("Manage-AuthorizedKey.ps1", "Read-AuthorizedKeyState.ps1")
 
 
 def fingerprint(public_key: str) -> str:
@@ -91,17 +97,60 @@ def validate_inventory(
     for name, variables in supported.items():
         platform = variables.get("ssh_key_platform")
         path = variables.get("ssh_authorized_keys_path")
+        connection_user = variables.get("ansible_user")
+        owner = variables.get("ssh_key_owner")
+        become = variables.get("ssh_key_become", False)
+        manage_directory = variables.get("ssh_key_manage_directory", True)
         writable = variables.get("ssh_key_write_enabled", True)
         if platform not in {"posix", "windows"}:
             errors.append(f"{name}: ssh_key_platform must be posix or windows")
         if not isinstance(writable, bool):
             errors.append(f"{name}: ssh_key_write_enabled must be boolean")
+        if not isinstance(connection_user, str) or not connection_user:
+            errors.append(f"{name}: ansible_user connection account is required")
+        if not isinstance(owner, str) or not owner:
+            errors.append(f"{name}: ssh_key_owner managed account is required")
+        if not isinstance(become, bool):
+            errors.append(f"{name}: ssh_key_become must be boolean")
+        if not isinstance(manage_directory, bool):
+            errors.append(f"{name}: ssh_key_manage_directory must be boolean")
         if not isinstance(path, str) or not path:
             errors.append(f"{name}: ssh_authorized_keys_path is required")
         elif platform == "posix" and not path.startswith("/"):
             errors.append(f"{name}: POSIX authorized-keys path must be absolute")
         elif platform == "windows" and not WINDOWS_ABSOLUTE_PATH.match(path):
             errors.append(f"{name}: Windows authorized-keys path must be absolute")
+
+        if platform == "windows":
+            account_type = variables.get("ssh_key_windows_account_type")
+            if account_type not in {"standard", "administrator"}:
+                errors.append(
+                    f"{name}: ssh_key_windows_account_type must be standard "
+                    "or administrator"
+                )
+            elif account_type == "administrator" and (
+                not isinstance(path, str) or not WINDOWS_ADMIN_KEYS_PATH.match(path)
+            ):
+                errors.append(
+                    f"{name}: administrator keys must use the ProgramData shared file"
+                )
+            elif (
+                account_type == "standard"
+                and isinstance(path, str)
+                and WINDOWS_ADMIN_KEYS_PATH.match(path)
+            ):
+                errors.append(
+                    f"{name}: standard users cannot use the administrator shared file"
+                )
+            if become is True and variables.get("ansible_become_method") != "runas":
+                errors.append(
+                    f"{name}: elevated Windows writes require "
+                    "ansible_become_method=runas"
+                )
+            if become is True and not variables.get("ansible_become_user"):
+                errors.append(
+                    f"{name}: elevated Windows writes require ansible_become_user"
+                )
 
         if writable is False:
             writer_name = variables.get("ssh_key_shared_writer")
@@ -114,6 +163,12 @@ def validate_inventory(
                 errors.append(f"{name}: shared writer uses a different key path")
             elif writer.get("ssh_key_platform") != platform:
                 errors.append(f"{name}: shared writer uses a different platform")
+            elif writer.get("ssh_key_owner") != owner:
+                errors.append(f"{name}: shared writer uses a different managed owner")
+            elif writer.get("ssh_key_windows_account_type") != variables.get(
+                "ssh_key_windows_account_type"
+            ):
+                errors.append(f"{name}: shared writer uses a different account type")
     return supported, unknown
 
 
@@ -252,11 +307,25 @@ def validate_project(
             path = root / "playbooks" / "tasks" / f"{family}{suffix}"
             if not path.is_file():
                 errors.append(f"missing task file: {path.name}")
+    for filename in POWERSHELL_FILES:
+        if not (root / "playbooks" / "files" / filename).is_file():
+            errors.append(f"missing PowerShell file: {filename}")
     return errors
 
 
-def main() -> int:
-    errors = validate_project()
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--inventory",
+        default="hosts.yml.example",
+        help="inventory filename under inventory/ (default: hosts.yml.example)",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    errors = validate_project(inventory_filename=args.inventory)
     if errors:
         print("SSH key rotation validation failed:")
         for error in errors:
@@ -264,7 +333,7 @@ def main() -> int:
         return 1
 
     inventory = yaml.safe_load(
-        (ROOT / "inventory" / "hosts.yml").read_text(encoding="utf-8")
+        (ROOT / "inventory" / args.inventory).read_text(encoding="utf-8")
     )
     children = inventory["all"]["children"]
     supported = collect_hosts(children["ssh_key_supported"])

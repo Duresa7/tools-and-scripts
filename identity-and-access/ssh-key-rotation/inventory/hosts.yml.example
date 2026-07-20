@@ -1,7 +1,5 @@
 ---
-# CUSTOMIZE: Copy this file to hosts.yml, then replace every *-example alias,
-# documentation IP address, login user, and authorized_keys path. Identity
-# target_hosts values must refer to the aliases defined here, not IP addresses.
+# Copy this file to hosts.yml. Every value marked CUSTOMIZE belongs to your environment.
 all:
   children:
     ssh_key_supported:
@@ -11,49 +9,78 @@ all:
             ssh_key_platform: posix
             ssh_key_write_enabled: true
           hosts:
-            # CUSTOMIZE: Rename the alias and set the address, SSH user, and key
-            # file used by that account. Add more hosts at this indentation.
-            linux-example:
+            # CUSTOMIZE: Rename this inventory alias.
+            posix-standard-example:
+              # CUSTOMIZE: Set the target address or resolvable name.
               ansible_host: 192.0.2.10
-              ansible_user: admin
-              ssh_authorized_keys_path: /home/admin/.ssh/authorized_keys
+              # CUSTOMIZE: Set the ordinary account used for the SSH connection.
+              ansible_user: replace-connection-account
+              # CUSTOMIZE: Set the account whose authorized_keys file is managed.
+              ssh_key_owner: replace-managed-account
+              # CUSTOMIZE: Set the absolute authorized_keys path for that owner.
+              ssh_authorized_keys_path: /home/replace-managed-account/.ssh/authorized_keys
+              ssh_key_manage_directory: true
+              # CUSTOMIZE: Set true when the connection account needs sudo for this file.
+              ssh_key_become: true
 
-        # CUSTOMIZE: Use this group only when several hosts read one shared key
-        # file. Exactly one inventory host should be allowed to write that file.
         shared_posix_key_hosts:
           vars:
             ssh_key_platform: posix
-            ssh_authorized_keys_path: /srv/cluster/authorized_keys
+            ssh_key_owner: replace-managed-account
+            ssh_authorized_keys_path: /srv/shared-service/authorized_keys
+            # A shared service directory must be provisioned outside this playbook.
+            ssh_key_manage_directory: false
           hosts:
-            # CUSTOMIZE: This host performs the one write to the shared key file.
-            cluster-writer-example:
+            # CUSTOMIZE: This alias performs the one write to the shared file.
+            shared-writer-example:
               ansible_host: 192.0.2.20
-              ansible_user: root
+              ansible_user: replace-connection-account
+              ssh_key_become: true
               ssh_key_write_enabled: true
-            # CUSTOMIZE: Readers verify the shared file but do not change it.
-            # Point ssh_key_shared_writer at the writer alias above.
-            cluster-reader-example:
+            # CUSTOMIZE: This alias verifies the shared file and names its writer.
+            shared-reader-example:
               ansible_host: 192.0.2.21
-              ansible_user: root
+              ansible_user: replace-connection-account
+              ssh_key_become: true
               ssh_key_write_enabled: false
-              ssh_key_shared_writer: cluster-writer-example
+              ssh_key_shared_writer: shared-writer-example
 
-        windows_ssh_key_hosts:
+        windows_standard_key_hosts:
           vars:
             ansible_connection: ssh
             ansible_shell_type: powershell
             ssh_key_platform: windows
+            ssh_key_windows_account_type: standard
             ssh_key_write_enabled: true
           hosts:
-            # CUSTOMIZE: Set the Windows host, OpenSSH account, and authorized
-            # keys file. Administrators commonly use the path shown below.
-            windows-example:
+            # CUSTOMIZE: Set a Windows standard-user target and account details.
+            windows-standard-example:
               ansible_host: 192.0.2.30
-              ansible_user: Administrator
-              ssh_authorized_keys_path: 'C:\ProgramData\ssh\administrators_authorized_keys'
+              ansible_user: replace-windows-account
+              ssh_key_owner: replace-windows-account
+              ssh_authorized_keys_path: 'C:\Users\replace-windows-account\.ssh\authorized_keys'
+              ssh_key_become: false
 
-    # CUSTOMIZE: Keep unverified hosts here until you have confirmed their key
-    # path and platform. The operational playbooks cannot target this group.
+        windows_administrator_key_hosts:
+          vars:
+            ansible_connection: ssh
+            ansible_shell_type: powershell
+            ssh_key_platform: windows
+            ssh_key_windows_account_type: administrator
+            ssh_key_owner: 'BUILTIN\Administrators'
+            ssh_authorized_keys_path: 'C:\ProgramData\ssh\administrators_authorized_keys'
+            ssh_key_write_enabled: true
+          hosts:
+            # CUSTOMIZE: Set the target and a connection account allowed to elevate.
+            windows-administrator-example:
+              ansible_host: 192.0.2.31
+              ansible_user: replace-connection-account
+              ssh_key_become: true
+              ansible_become_method: runas
+              # CUSTOMIZE: Set the Windows account used for the elevated task.
+              ansible_become_user: replace-elevation-account
+
+    # CUSTOMIZE: Keep unverified hosts here until platform, owner, and path are known.
     ssh_key_unknown:
       hosts:
         unverified-example:
