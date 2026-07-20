@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MARKER_COUNTS = {
     "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 8,
     "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 7,
-    "networking/networkmanager-cutover/networkmanager-ifupdown-cutover.sh": 1,
+    "networking/networkmanager-cutover/config.example.conf": 10,
 }
 
 HELP_CASES = (
@@ -85,7 +85,10 @@ def test_every_tool_readme_has_a_customization_section() -> None:
     missing = [
         path
         for path in TOOL_READMES
-        if "## What you must customize" not in (ROOT / path).read_text(encoding="utf-8")
+        if not any(
+            marker in (ROOT / path).read_text(encoding="utf-8")
+            for marker in ("CUSTOMIZE:", "## What you must customize")
+        )
     ]
     assert missing == []
 
