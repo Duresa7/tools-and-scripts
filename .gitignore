@@ -7,6 +7,9 @@ secrets.env
 *.pem
 1password-credentials.json
 
+# Personal Claude Code settings, not for the repo
+.claude/settings.local.json
+
 # Test and benchmark output
 *-workspace/
 scratchpad/

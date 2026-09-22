@@ -7,5 +7,6 @@
 *.ps1  text eol=crlf
 
 *.md   text
+*.json text
 *.yaml text
-*.svg  text
+*.toml text
