@@ -1,0 +1,19 @@
+# Never commit a resolved secret. These are the file names op writes to.
+*.env
+!*.env.example
+secrets.env
+*.out
+*.key
+*.pem
+1password-credentials.json
+
+# Test and benchmark output
+*-workspace/
+scratchpad/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

@@ -1,0 +1,12 @@
+interface:
+  display_name: Enterprise IT Docs
+  short_description: Generate formal markdown infrastructure and security documentation
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
