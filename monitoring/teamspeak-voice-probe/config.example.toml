@@ -1,0 +1,28 @@
+[probe]
+# CUSTOMIZE: Set the host or IPv4 address where your voice servers listen. Keep 127.0.0.1 when the probe runs on the server host.
+local_host = "127.0.0.1"
+# CUSTOMIZE: Set the seconds to wait for each handshake reply and each SRV lookup.
+timeout_seconds = 4
+# CUSTOMIZE: Set a DNS server for SRV lookups, or leave empty to use the system resolver.
+dns_server = ""
+
+[metrics]
+# CUSTOMIZE: Set a .prom file inside the directory node_exporter reads with --collector.textfile.directory.
+output_path = "/var/lib/node_exporter/textfile_collector/teamspeak.prom"
+
+# Repeat the [[servers]] table once for each voice server.
+[[servers]]
+# CUSTOMIZE: Set a short label for this voice server. It becomes the server metric label.
+name = "voice1"
+# CUSTOMIZE: Set the public address users type. The probe looks up _ts3._udp.<address>.
+address = "voice1.example.com"
+# CUSTOMIZE: Set the voice server's UDP port on local_host.
+local_port = 9987
+# CUSTOMIZE: Set the ServerQuery TCP port on local_host, or 0 to skip ServerQuery metrics.
+query_port = 0
+# CUSTOMIZE: Set a ServerQuery login that can read serverinfo. Required when query_port is set.
+query_username = ""
+# CUSTOMIZE: Set only the environment-variable name that holds that login's password. Never put the password here.
+query_password_env = ""
+# CUSTOMIZE: Set the virtual server ID that serverinfo reads.
+virtual_server_id = 1
