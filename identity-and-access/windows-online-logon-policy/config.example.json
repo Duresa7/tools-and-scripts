@@ -1,0 +1,10 @@
+{
+  "_comment_Domain": "CUSTOMIZE: Set the workstation AD DNS domain.",
+  "Domain": "ad.example.com",
+  "_comment_Server": "CUSTOMIZE: Set the domain controller used for writes and secure-channel checks.",
+  "Server": "dc.ad.example.com",
+  "_comment_TargetOU": "CUSTOMIZE: Choose a pilot workstation OU in this domain, excluding servers and domain controllers.",
+  "TargetOU": "OU=PilotComputers,DC=ad,DC=example,DC=com",
+  "_comment_GpoName": "CUSTOMIZE: Choose a dedicated policy name shared by the setter and checker.",
+  "GpoName": "Require connected sign-in"
+}
