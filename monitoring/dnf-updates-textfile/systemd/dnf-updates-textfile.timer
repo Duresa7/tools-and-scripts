@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh pending dnf update counts every 15 minutes
+
+[Timer]
+# CUSTOMIZE: Change the schedule if 15 minutes is too frequent for your mirrors.
+OnBootSec=5min
+OnUnitActiveSec=15min
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

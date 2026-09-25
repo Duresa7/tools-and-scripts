@@ -1,0 +1,7 @@
+[Unit]
+Description=Write pending dnf update counts for the node_exporter textfile collector
+
+[Service]
+Type=oneshot
+# CUSTOMIZE: Match the installed script path and config path.
+ExecStart=/usr/local/sbin/dnf-updates-textfile --config /usr/local/etc/dnf-updates-textfile.conf
