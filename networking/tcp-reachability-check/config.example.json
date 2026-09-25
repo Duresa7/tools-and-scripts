@@ -1,0 +1,41 @@
+{
+  "_comment_ExpectedSource": "CUSTOMIZE: Optional expected source computer name (e.g. 'workstation01'). Leave empty to allow any source host.",
+  "ExpectedSource": "",
+  "_comment_TimeoutSeconds": "CUSTOMIZE: Connection timeout in seconds for each target probe.",
+  "TimeoutSeconds": 3.0,
+  "_comment_Format": "CUSTOMIZE: Output format. Set to 'Table' for readable text or 'Json' for structured automation.",
+  "Format": "Table",
+  "_comment_Targets": "CUSTOMIZE: List of targets to probe. Each target must have 'Target' and 'Port', with an optional 'Label'.",
+  "Targets": [
+    {
+      "_comment": "CUSTOMIZE: Primary directory service LDAP port probe example.",
+      "Target": "192.0.2.10",
+      "Port": 389,
+      "Label": "directory-ldap"
+    },
+    {
+      "_comment": "CUSTOMIZE: Secondary directory service LDAP port probe example.",
+      "Target": "192.0.2.11",
+      "Port": 389,
+      "Label": "directory-ldap-secondary"
+    },
+    {
+      "_comment": "CUSTOMIZE: Management RPC endpoint mapper probe example.",
+      "Target": "workstation01.example.net",
+      "Port": 135,
+      "Label": "rpc-endpoint-mapper"
+    },
+    {
+      "_comment": "CUSTOMIZE: SMB file and IPC endpoint probe example.",
+      "Target": "workstation01.example.net",
+      "Port": 445,
+      "Label": "smb-share"
+    },
+    {
+      "_comment": "CUSTOMIZE: Web console or API service probe example.",
+      "Target": "app.example.net",
+      "Port": 443,
+      "Label": "web-application"
+    }
+  ]
+}
