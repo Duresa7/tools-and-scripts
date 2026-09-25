@@ -1,0 +1,12 @@
+{
+  "_comment_InstallerPath": "CUSTOMIZE: Set the absolute path to the installer executable to verify.",
+  "InstallerPath": "C:\\Program Files\\ExampleCorp\\installer.exe",
+  "_comment_ExpectedPublisher": "CUSTOMIZE: Set the exact CN or O publisher name expected on the Authenticode certificate.",
+  "ExpectedPublisher": "Example Corp",
+  "_comment_ExpectedSHA256": "CUSTOMIZE: Optional expected SHA-256 hex digest of the installer file, or empty string to skip hash verification.",
+  "ExpectedSHA256": "",
+  "_comment_ExpectedComputer": "CUSTOMIZE: Optional host name where this check must be executed, or empty string to allow any host.",
+  "ExpectedComputer": "",
+  "_comment_Format": "Output format: Table or Json.",
+  "Format": "Table"
+}
