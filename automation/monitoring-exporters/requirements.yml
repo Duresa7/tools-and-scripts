@@ -1,0 +1,3 @@
+---
+# Built-in modules use the target Docker Compose CLI; no collections are required.
+collections: []

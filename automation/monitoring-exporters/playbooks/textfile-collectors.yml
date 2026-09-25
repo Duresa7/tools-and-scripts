@@ -1,0 +1,254 @@
+---
+- name: Enable textfile collectors on the binary-installed node_exporter hosts
+  hosts: '{{ target | default(''textfile_collector_targets'') }}'
+  gather_facts: true
+  become: true
+  serial: 1
+  vars:
+    textfile_dir: '{{ (monitoring | default({})).textfile_dir | default(''/var/lib/prometheus/node-exporter'') }}'
+    node_exporter_binary: '{{ (monitoring | default({})).node_exporter_binary | default(''/usr/local/bin/node_exporter'')
+      }}'
+    node_exporter_port: '{{ (monitoring | default({})).node_exporter_port | default(9100) }}'
+    hardware_collectors: '{{ ansible_facts.virtualization_role | default(''guest'') == ''host'' and ansible_facts.pkg_mgr
+      == ''apt'' }}'
+    node_exporter_unit_dir: '{{ (monitoring | default({})).node_exporter_unit_dir | default(''/etc/systemd/system'') }}'
+    dnf_script_path: '{{ (monitoring | default({})).dnf_script_path | default(''/usr/local/sbin/dnf-updates-textfile'') }}'
+    dnf_kernel_package: '{{ (monitoring | default({})).dnf_kernel_package | default(''kernel'') }}'
+    dnf_interval: '{{ (monitoring | default({})).dnf_interval | default(''15min'') }}'
+    dnf_boot_delay: '{{ (monitoring | default({})).dnf_boot_delay | default(''5min'') }}'
+    dnf_random_delay: '{{ (monitoring | default({})).dnf_random_delay | default(''2min'') }}'
+    node_exporter_listen_address: '{{ (monitoring | default({})).node_exporter_listen_address | default(''127.0.0.1:'' ~ node_exporter_port)
+      }}'
+    node_exporter_probe_host: '{{ (monitoring | default({})).node_exporter_probe_host | default(''127.0.0.1'') }}'
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+    NEEDRESTART_MODE: l
+  pre_tasks:
+    - name: Require approved inventory membership
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in groups.get('textfile_collector_targets', [])
+          - groups.get('textfile_collector_targets', []) | sort == (monitoring_scope | default({})).get('textfile_collector_targets',
+            []) | sort
+        fail_msg: Target scope differs from the reviewed monitoring_scope allowlist.
+        quiet: true
+    - name: Require explicit consent for live changes
+      ansible.builtin.assert:
+        that:
+          - ansible_check_mode or monitoring_confirmation | default('') == 'APPLY monitoring exporters'
+        fail_msg: Use --check to preview or supply the documented confirmation phrase.
+        quiet: true
+    - name: Describe the check mode boundary
+      ansible.builtin.debug:
+        msg: 'Preview only: approved host and configuration checked. Downloads, writes, restarts, and live verification require
+          an apply run.'
+      when: ansible_check_mode
+    - name: Finish preview before changing the target
+      ansible.builtin.meta: end_host
+      when: ansible_check_mode
+  tasks:
+    - name: Confirm a supported package manager is present
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.pkg_mgr in ['apt', 'dnf', 'dnf5']
+        fail_msg: Unsupported package manager '{{ ansible_facts.pkg_mgr }}' on {{ inventory_hostname }}.
+        quiet: true
+    - name: Require the packaged APT collector output directory
+      when: ansible_facts.pkg_mgr == 'apt'
+      ansible.builtin.assert:
+        that:
+          - textfile_dir == '/var/lib/prometheus/node-exporter'
+        fail_msg: The packaged APT collector writes to its standard directory.
+        quiet: true
+    - name: Confirm this host runs the upstream node_exporter unit
+      ansible.builtin.stat:
+        path: '{{ node_exporter_unit_dir }}/node_exporter.service'
+      register: upstream_unit
+    - name: Stop when the host is not a binary-installed node_exporter
+      ansible.builtin.assert:
+        that:
+          - upstream_unit.stat.exists
+        fail_msg: '{{ inventory_hostname }} has no /etc/systemd/system/node_exporter.service. It is either package-managed,
+          in which case it already has a textfile collector, or has no exporter at all.'
+        quiet: true
+    - name: Create the textfile collector directory
+      ansible.builtin.file:
+        path: '{{ textfile_dir }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Install the collectors package without its Recommends
+      when: ansible_facts.pkg_mgr == 'apt'
+      ansible.builtin.apt:
+        name: prometheus-node-exporter-collectors
+        state: present
+        install_recommends: false
+        update_cache: true
+        cache_valid_time: 3600
+    - name: Install nvme-cli on bare metal so the NVMe script has something to run
+      when:
+        - ansible_facts.pkg_mgr == 'apt'
+        - hardware_collectors | bool
+      ansible.builtin.apt:
+        name: nvme-cli
+        state: present
+        install_recommends: false
+    - name: Enable the apt collector timer
+      when: ansible_facts.pkg_mgr == 'apt'
+      ansible.builtin.systemd_service:
+        name: prometheus-node-exporter-apt.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+    - name: Enable the SMART and NVMe collector timers on bare metal
+      when:
+        - ansible_facts.pkg_mgr == 'apt'
+        - hardware_collectors | bool
+      ansible.builtin.systemd_service:
+        name: '{{ item }}'
+        enabled: true
+        state: started
+      loop:
+        - prometheus-node-exporter-smartmon.timer
+        - prometheus-node-exporter-nvme.timer
+    - name: Write the first apt textfile now rather than at the next timer tick
+      when: ansible_facts.pkg_mgr == 'apt'
+      changed_when: false
+      ansible.builtin.systemd_service:
+        name: prometheus-node-exporter-apt.service
+        state: started
+    - name: Write the first SMART and NVMe textfiles now on bare metal
+      when:
+        - ansible_facts.pkg_mgr == 'apt'
+        - hardware_collectors | bool
+      changed_when: false
+      ansible.builtin.systemd_service:
+        name: '{{ item }}'
+        state: started
+      loop:
+        - prometheus-node-exporter-smartmon.service
+        - prometheus-node-exporter-nvme.service
+    - name: Install the dnf update script
+      when: ansible_facts.pkg_mgr in ['dnf', 'dnf5']
+      ansible.builtin.copy:
+        src: files/dnf-updates-textfile.sh
+        dest: '{{ dnf_script_path }}'
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Install the dnf update service and timer
+      when: ansible_facts.pkg_mgr in ['dnf', 'dnf5']
+      ansible.builtin.copy:
+        dest: '{{ node_exporter_unit_dir }}/{{ item.name }}'
+        owner: root
+        group: root
+        mode: '0644'
+        content: '{{ item.content }}'
+      loop_control:
+        label: '{{ item.name }}'
+      loop:
+        - name: node-exporter-dnf-updates.service
+          content: |
+            # Managed by Ansible: monitoring-exporters/playbooks/textfile-collectors.yml
+            [Unit]
+            Description=Write pending dnf update counts for node_exporter
+
+            [Service]
+            Type=oneshot
+            ExecStart={{ dnf_script_path }} --output {{ textfile_dir }}/dnf.prom --kernel-package {{ dnf_kernel_package }}
+        - name: node-exporter-dnf-updates.timer
+          content: |
+            # Managed by Ansible: monitoring-exporters/playbooks/textfile-collectors.yml
+            [Unit]
+            Description=Refresh pending dnf update counts every 15 minutes
+
+            [Timer]
+            OnBootSec={{ dnf_boot_delay }}
+            OnUnitActiveSec={{ dnf_interval }}
+            RandomizedDelaySec={{ dnf_random_delay }}
+
+            [Install]
+            WantedBy=timers.target
+      notify: Restart the DNF collector timer
+    - name: Enable the dnf update timer
+      when: ansible_facts.pkg_mgr in ['dnf', 'dnf5']
+      ansible.builtin.systemd_service:
+        name: node-exporter-dnf-updates.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+    - name: Write the first dnf textfile now
+      when: ansible_facts.pkg_mgr in ['dnf', 'dnf5']
+      changed_when: false
+      ansible.builtin.systemd_service:
+        name: node-exporter-dnf-updates.service
+        state: started
+    - name: Create the drop-in directory
+      ansible.builtin.file:
+        path: '{{ node_exporter_unit_dir }}/node_exporter.service.d'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Point node_exporter at the textfile directory
+      ansible.builtin.copy:
+        dest: '{{ node_exporter_unit_dir }}/node_exporter.service.d/textfile.conf'
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart={{ node_exporter_binary }} --web.listen-address={{ node_exporter_listen_address }} --collector.textfile.directory={{ textfile_dir }}
+      notify: Restart node_exporter
+    - name: Flush handlers before verifying
+      ansible.builtin.meta: flush_handlers
+    - name: Read the exporter's own view of the textfile collector
+      become: false
+      changed_when: false
+      ansible.builtin.shell:
+        cmd: |-
+          set -o pipefail
+          curl -fsS -m 10 http://{{ node_exporter_probe_host }}:{{ node_exporter_port }}/metrics |
+          grep -E '^(node_textfile_scrape_error|apt_package_cache_timestamp_seconds|apt_upgrades_pending|'\
+          'dnf_updates_check_timestamp_seconds|dnf_upgrades_pending|node_reboot_required|'\
+          'smartmon_device_smart_healthy|nvme_critical_warning)'
+        executable: /bin/bash
+      register: textfile_metrics
+      retries: 6
+      delay: 5
+      until: textfile_metrics.stdout is search('node_textfile_scrape_error 0')
+    - name: Fail unless the update collector ran and the scrape is clean
+      ansible.builtin.assert:
+        that:
+          - textfile_metrics.stdout is search('node_textfile_scrape_error 0')
+          - textfile_metrics.stdout is search('(apt_package_cache|dnf_updates_check)_timestamp_seconds')
+          - textfile_metrics.stdout is search('node_reboot_required')
+        fail_msg: '{{ inventory_hostname }} does not expose the textfile metrics cleanly. Got: {{ textfile_metrics.stdout
+          | default('''') | truncate(400) }}'
+        quiet: true
+    - name: Fail when a bare-metal host has no SMART health rows
+      when: hardware_collectors | bool
+      ansible.builtin.assert:
+        that:
+          - textfile_metrics.stdout is search('smartmon_device_smart_healthy')
+          - textfile_metrics.stdout is search('nvme_critical_warning')
+        fail_msg: '{{ inventory_hostname }} is bare metal but exposes no SMART or NVMe rows.'
+        quiet: true
+    - name: Report the per-host result
+      ansible.builtin.debug:
+        msg: '{{ inventory_hostname }}: pkg={{ ansible_facts.pkg_mgr }} virt={{ ansible_facts.virtualization_type | default(''none'')
+          }}/{{ ansible_facts.virtualization_role | default(''none'') }} hardware_collectors={{ hardware_collectors }} rows={{
+          textfile_metrics.stdout_lines | length }}'
+  handlers:
+    - name: Restart node_exporter
+      ansible.builtin.systemd_service:
+        name: node_exporter
+        state: restarted
+        daemon_reload: true
+    - name: Restart the DNF collector timer
+      ansible.builtin.systemd_service:
+        name: node-exporter-dnf-updates.timer
+        state: restarted
+        daemon_reload: true

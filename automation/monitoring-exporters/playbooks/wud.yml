@@ -1,0 +1,276 @@
+---
+- name: Manage What's Up Docker as a compose project on the Compose hosts
+  hosts: '{{ target | default(''wud_targets'') }}'
+  gather_facts: true
+  become: true
+  serial: 1
+  vars:
+    wud_state: '{{ (monitoring | default({})).wud_state | default(''present'') }}'
+    wud_image: '{{ (monitoring | default({})).wud_image | default(''getwud/wud:9.0.2'') }}'
+    wud_host_port: '{{ (monitoring | default({})).wud_host_port | default(9102) }}'
+    wud_project_dir: '{{ (monitoring | default({})).wud_project_dir | default(''/opt/docker/wud'') }}'
+    wud_timezone: '{{ (monitoring | default({})).wud_timezone | default(''Etc/UTC'') }}'
+    wud_admin_user: '{{ (monitoring | default({})).wud_admin_user | default(''metrics-admin'') }}'
+    wud_password_env: '{{ (monitoring | default({})).wud_password_env | default(''WUD_PASSWORD'') }}'
+    wud_prometheus_host: '{{ (monitoring | default({})).wud_prometheus_host | default('''') }}'
+    wud_credential_dir: '{{ (monitoring | default({})).wud_credential_dir | default(''/srv/prometheus/wud-passwords'') }}'
+    wud_credential_owner: '{{ (monitoring | default({})).wud_credential_owner | default(''65534'') }}'
+    wud_credential_group: '{{ (monitoring | default({})).wud_credential_group | default(''65534'') }}'
+    wud_bind_address: '{{ (monitoring | default({})).wud_bind_address | default(''127.0.0.1'') }}'
+    wud_watch_cron: '{{ wud_cron | default(''0 6 * * *'') }}'
+  pre_tasks:
+    - name: Require approved inventory membership
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in groups.get('wud_targets', [])
+          - groups.get('wud_targets', []) | sort == (monitoring_scope | default({})).get('wud_targets', []) | sort
+        fail_msg: Target scope differs from the reviewed monitoring_scope allowlist.
+        quiet: true
+    - name: Require explicit consent for live changes
+      ansible.builtin.assert:
+        that:
+          - ansible_check_mode or monitoring_confirmation | default('') == 'APPLY monitoring exporters'
+        fail_msg: Use --check to preview or supply the documented confirmation phrase.
+        quiet: true
+    - name: Validate the requested project state and directory
+      ansible.builtin.assert:
+        that:
+          - wud_state in ['present', 'absent']
+          - wud_project_dir is match('^/[A-Za-z0-9_./-]+/wud$')
+          - '''..'' not in wud_project_dir.split(''/'')'
+        quiet: true
+    - name: Describe the check mode boundary
+      ansible.builtin.debug:
+        msg: 'Preview only: approved host and configuration checked. Downloads, writes, restarts, and live verification require
+          an apply run.'
+      when: ansible_check_mode
+    - name: Finish preview before changing the target
+      ansible.builtin.meta: end_host
+      when: ansible_check_mode
+  tasks:
+    - name: Confirm Docker is present
+      ansible.builtin.command:
+        argv:
+          - docker
+          - version
+          - --format
+          - '{{ ''{{'' }}.Server.Version{{ ''}}'' }}'
+      changed_when: false
+      register: docker_version
+    - name: Remove the WUD project
+      when: wud_state == 'absent'
+      block:
+        - name: Inspect the compose file before removal
+          ansible.builtin.stat:
+            path: '{{ wud_project_dir }}/docker-compose.yml'
+          register: compose_file
+        - name: Take the compose project down
+          when: compose_file.stat.exists
+          environment:
+            WUD_ADMIN_PASSWORD: '{{ lookup(''ansible.builtin.env'', wud_password_env) | default(''unused-for-removal'', true)
+              }}'
+          no_log: true
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --ansi
+              - never
+              - --progress
+              - plain
+              - --project-name
+              - wud
+              - --file
+              - '{{ wud_project_dir }}/docker-compose.yml'
+              - down
+              - --remove-orphans
+              - --volumes
+            chdir: '{{ wud_project_dir }}'
+          register: compose_result
+          changed_when: (compose_result.stdout ~ compose_result.stderr) is search('(?m) (Created|Recreated|Started|Pulled|Removed)')
+        - name: Inspect leftover container names
+          ansible.builtin.command:
+            argv:
+              - docker
+              - ps
+              - --all
+              - --filter
+              - name=^wud$
+              - --format
+              - '{{ ''{{'' }}.Names{{ ''}}'' }}'
+          register: leftover_container
+          changed_when: false
+        - name: Remove any leftover container
+          ansible.builtin.command:
+            argv:
+              - docker
+              - rm
+              - --force
+              - wud
+          when: leftover_container.stdout | trim == 'wud'
+          changed_when: true
+        - name: Remove the project directory
+          ansible.builtin.file:
+            path: '{{ wud_project_dir }}'
+            state: absent
+        - name: Report the removal
+          ansible.builtin.debug:
+            msg: '{{ inventory_hostname }}: WUD removed'
+    - name: Install and verify the WUD project
+      when: wud_state == 'present'
+      block:
+        - name: Confirm the chosen host port is free or already ours
+          changed_when: false
+          ansible.builtin.command:
+            argv:
+              - ss
+              - -lntH
+              - 'sport = :{{ wud_host_port }}'
+          register: port_state
+        - name: Detect an existing WUD container
+          changed_when: false
+          ansible.builtin.command:
+            argv:
+              - docker
+              - ps
+              - -a
+              - --filter
+              - name=^wud$
+              - --format
+              - '{{ ''{{'' }}.Names{{ ''}}'' }}'
+          register: existing_wud
+        - name: Stop when the port is taken by something that is not WUD
+          ansible.builtin.assert:
+            that:
+              - port_state.stdout | trim == '' or existing_wud.stdout | trim == 'wud'
+            fail_msg: '{{ inventory_hostname }} already has a listener on {{ wud_host_port }} that is not WUD. Pick another
+              port with -e wud_host_port=NNNN or free it first.'
+            quiet: true
+        - name: Create the project directory
+          ansible.builtin.file:
+            path: '{{ wud_project_dir }}'
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+        - name: Read the administrator credential from the named environment variable
+          ansible.builtin.set_fact:
+            wud_admin_password: '{{ lookup(''ansible.builtin.env'', wud_password_env) }}'
+          no_log: true
+        - name: Require a nonempty single line administrator credential
+          ansible.builtin.assert:
+            that:
+              - wud_admin_password | length >= 16
+              - wud_admin_password is match('^[A-Za-z0-9_-]+$')
+              - wud_admin_user is match('^[A-Za-z0-9_-]+$')
+            fail_msg: Set the named environment variable to a URL-safe password of at least 16 characters.
+          no_log: true
+        - name: Write the compose file
+          ansible.builtin.copy:
+            dest: '{{ wud_project_dir }}/docker-compose.yml'
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              services:
+                wud:
+                  image: {{ wud_image }}
+                  container_name: wud
+                  restart: unless-stopped
+                  environment:
+                    - WUD_AUTH_ADMIN_USER={{ wud_admin_user }}
+                    - WUD_AUTH_ADMIN_PASSWORD=${WUD_ADMIN_PASSWORD:?Set WUD_ADMIN_PASSWORD}
+                    - TZ={{ wud_timezone }}
+                    - WUD_WATCHER_LOCAL_CRON={{ wud_watch_cron }}
+                    - WUD_LOG_LEVEL=info
+                    - WUD_SERVER_FEATURE_DELETE=false
+                    - WUD_REGISTRY_HUB_PUBLIC_WATCHDIGEST=true
+                    - WUD_REGISTRY_HUB_PUBLIC_SUPPRESSDIGESTWATCHWARNING=true
+                  volumes:
+                    - /var/run/docker.sock:/var/run/docker.sock:ro
+                    - wud_store:/store
+                  ports:
+                    - "{{ wud_bind_address }}:{{ wud_host_port }}:3000"
+              volumes:
+                wud_store:
+        - name: Bring the project up
+          environment:
+            WUD_ADMIN_PASSWORD: '{{ wud_admin_password }}'
+          no_log: true
+          ansible.builtin.command:
+            argv:
+              - docker
+              - compose
+              - --ansi
+              - never
+              - --progress
+              - plain
+              - --project-name
+              - wud
+              - --file
+              - '{{ wud_project_dir }}/docker-compose.yml'
+              - up
+              - --detach
+              - --pull
+              - missing
+            chdir: '{{ wud_project_dir }}'
+          register: compose_result
+          changed_when: (compose_result.stdout ~ compose_result.stderr) is search('(?m) (Created|Recreated|Started|Pulled|Removed)')
+        - name: Create the Prometheus credential directory
+          ansible.builtin.file:
+            path: '{{ wud_credential_dir }}'
+            state: directory
+            owner: '{{ wud_credential_owner }}'
+            group: '{{ wud_credential_group }}'
+            mode: '0700'
+          delegate_to: '{{ wud_prometheus_host }}'
+          when: wud_prometheus_host | length > 0
+        - name: Install this host's Prometheus scrape credential
+          ansible.builtin.copy:
+            dest: '{{ wud_credential_dir }}/{{ inventory_hostname }}'
+            content: '{{ wud_admin_password }}'
+            owner: '{{ wud_credential_owner }}'
+            group: '{{ wud_credential_group }}'
+            mode: '0600'
+          delegate_to: '{{ wud_prometheus_host }}'
+          no_log: true
+          when: wud_prometheus_host | length > 0
+        - name: Confirm WUD exports container metrics with authentication
+          become: false
+          changed_when: false
+          ansible.builtin.uri:
+            url: http://127.0.0.1:{{ wud_host_port }}/metrics
+            url_username: '{{ wud_admin_user }}'
+            url_password: '{{ wud_admin_password }}'
+            force_basic_auth: true
+            return_content: true
+            status_code: 200
+          retries: 10
+          delay: 6
+          until: wud_probe is succeeded and 'wud_containers{' in (wud_probe.content | default(''))
+          register: wud_probe
+          no_log: true
+        - name: Count the containers WUD reports
+          ansible.builtin.set_fact:
+            wud_count:
+              stdout: '{{ wud_probe.content | regex_findall(''(?m)^wud_containers[{]'') | length }}'
+          no_log: true
+        - name: Count the containers Docker itself reports running
+          changed_when: false
+          ansible.builtin.shell:
+            cmd: |-
+              set -o pipefail
+              docker ps -q | wc -l
+            executable: /bin/bash
+          register: docker_running
+        - name: Fail when WUD watched nothing on a host that runs containers
+          ansible.builtin.assert:
+            that:
+              - (wud_count.stdout | trim | int) > 0 or (docker_running.stdout | trim | int) == 0
+            fail_msg: '{{ inventory_hostname }}: WUD reports no containers while Docker reports {{ docker_running.stdout |
+              trim }} running. Check the container log.'
+            quiet: true
+        - name: Report the per-host result
+          ansible.builtin.debug:
+            msg: '{{ inventory_hostname }}: docker={{ docker_version.stdout | trim }} port={{ wud_host_port }} cron="{{ wud_watch_cron
+              }}" watched={{ wud_count.stdout | trim }} of {{ docker_running.stdout | trim }} running'

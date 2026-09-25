@@ -1,0 +1,97 @@
+---
+project:
+  # CUSTOMIZE: Review this local name or path before registering the template.
+  name: Monitoring-Exporters
+  repository:
+    # CUSTOMIZE: Review this local name or path before registering the template.
+    name: monitoring-exporters
+    # CUSTOMIZE: Review this local name or path before registering the template.
+    path: /srv/automation/monitoring-exporters
+  inventory:
+    # CUSTOMIZE: Review this local name or path before registering the template.
+    name: exporter-hosts
+    # CUSTOMIZE: Review this local name or path before registering the template.
+    path: /srv/automation/monitoring-exporters/inventory/hosts.yml
+    # CUSTOMIZE: Review this local name or path before registering the template.
+    credential: exporter-ssh-key
+  environment:
+    # CUSTOMIZE: Review this local name or path before registering the template.
+    name: C UTF-8
+    variables:
+      LANG: C.utf8
+      LC_ALL: C.utf8
+views:
+  - All
+  - Node Exporter
+  - cAdvisor
+  - Textfile Collectors
+  - What's Up Docker
+templates:
+  - name: 'Node Exporter: Reconcile All Hosts'
+    view: Node Exporter
+    playbook: playbooks/node-exporter.yml
+    arguments:
+      - --check
+  - name: 'Node Exporter: Single Host'
+    view: Node Exporter
+    playbook: playbooks/node-exporter.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Target host
+        description: Inventory host name from the Node Exporter view.
+        type: ''
+        required: true
+        values: []
+  - name: 'cAdvisor: Reconcile All Docker Hosts'
+    view: cAdvisor
+    playbook: playbooks/cadvisor.yml
+    arguments:
+      - --check
+  - name: 'cAdvisor: Single Host'
+    view: cAdvisor
+    playbook: playbooks/cadvisor.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Target host
+        description: Inventory host name from the cAdvisor view.
+        type: ''
+        required: true
+        values: []
+  - name: 'Textfile Collectors: Reconcile Binary Hosts'
+    view: Textfile Collectors
+    playbook: playbooks/textfile-collectors.yml
+    arguments:
+      - --check
+  - name: 'Textfile Collectors: Single Host'
+    view: Textfile Collectors
+    playbook: playbooks/textfile-collectors.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Target host
+        description: Inventory host name from the Textfile Collectors view.
+        type: ''
+        required: true
+        values: []
+  - name: 'WUD: Reconcile All Compose Hosts'
+    view: What's Up Docker
+    playbook: playbooks/wud.yml
+    arguments:
+      - --check
+  - name: 'WUD: Single Host'
+    view: What's Up Docker
+    playbook: playbooks/wud.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Target host
+        description: Inventory host name from the What's Up Docker view.
+        type: ''
+        required: true
+        values: []

@@ -1,0 +1,87 @@
+---
+all:
+  vars:
+    # CUSTOMIZE: Use an ordinary SSH account with approved sudo access.
+    ansible_user: automation-user
+    # CUSTOMIZE: Installation requires elevation after ordinary SSH login.
+    ansible_become: true
+    # CUSTOMIZE: Review each complete allowlist independently of group membership.
+    monitoring_scope:
+      node_exporter_targets: [linux-example, binary-example]
+      cadvisor_targets: [docker-example]
+      textfile_collector_targets: [binary-example]
+      wud_targets: [docker-example]
+    monitoring:
+      # CUSTOMIZE: Pinned defaults; update both upstream and APT versions together.
+      node_exporter_version: '1.9.0'
+      node_exporter_apt_version: '1.9.0-1+b4'
+      # CUSTOMIZE: Match your scrape port and listen interface. Loopback is the default.
+      node_exporter_port: 9100
+      node_exporter_listen_address: '127.0.0.1:9100'
+      node_exporter_probe_host: '127.0.0.1'
+      # CUSTOMIZE: The binary path supports x86_64 targets only.
+      node_exporter_arch: amd64
+      # CUSTOMIZE: Set the service account, binary, and systemd paths.
+      node_exporter_service_user: node_exporter
+      node_exporter_binary: /usr/local/bin/node_exporter
+      node_exporter_unit_dir: /etc/systemd/system
+      # CUSTOMIZE: Opt in only after reviewing the active firewalld zone.
+      node_exporter_manage_firewall: false
+      # CUSTOMIZE: This must match the packaged APT collector output directory.
+      textfile_dir: /var/lib/prometheus/node-exporter
+      # CUSTOMIZE: Set the installed DNF script path, kernel package, and timer policy.
+      dnf_script_path: /usr/local/sbin/dnf-updates-textfile
+      dnf_kernel_package: kernel
+      dnf_interval: 15min
+      dnf_boot_delay: 5min
+      dnf_random_delay: 2min
+      # CUSTOMIZE: Reviewed cAdvisor image, dedicated project directory, and listener.
+      cadvisor_image: ghcr.io/google/cadvisor:v0.60.5
+      cadvisor_project_dir: /opt/docker/cadvisor
+      cadvisor_host_port: 9101
+      cadvisor_bind_address: '127.0.0.1'
+      cadvisor_state: present
+      # CUSTOMIZE: Keep CPU, memory, network, and container presence metrics.
+      cadvisor_disabled_metrics: >-
+        percpu,sched,tcp,udp,advtcp,process,hugetlb,referenced_memory,cpu_topology,resctrl,cpuset,memory_numa
+      # CUSTOMIZE: Reviewed WUD image, dedicated project directory, and listener.
+      wud_image: getwud/wud:9.0.2
+      wud_project_dir: /opt/docker/wud
+      wud_host_port: 9102
+      wud_bind_address: '127.0.0.1'
+      wud_state: present
+      # CUSTOMIZE: Match the host's intended daily registry-check timezone.
+      wud_timezone: Etc/UTC
+      # CUSTOMIZE: UI account and NAME of the controller environment variable only.
+      wud_admin_user: metrics-admin
+      wud_password_env: WUD_PASSWORD
+      # CUSTOMIZE: Optional inventory alias receiving a protected scrape password.
+      wud_prometheus_host: ''
+      # CUSTOMIZE: Prometheus password-file directory and its numeric owner/group.
+      wud_credential_dir: /srv/prometheus/wud-passwords
+      wud_credential_owner: '65534'
+      wud_credential_group: '65534'
+  children:
+    node_exporter_targets:
+      hosts:
+        # CUSTOMIZE: Rename this alias and use the actual APT target address.
+        linux-example:
+          ansible_host: 192.0.2.10
+        # CUSTOMIZE: This example represents a DNF host needing an upstream binary.
+        binary-example:
+          ansible_host: 192.0.2.11
+    cadvisor_targets:
+      hosts:
+        # CUSTOMIZE: Include only hosts running Docker, not another container runtime.
+        docker-example:
+          ansible_host: 192.0.2.12
+    textfile_collector_targets:
+      hosts:
+        # CUSTOMIZE: Include only hosts with the upstream node_exporter.service unit.
+        binary-example: {}
+    wud_targets:
+      hosts:
+        # CUSTOMIZE: Include only hosts whose images this project may inspect.
+        docker-example:
+          # CUSTOMIZE: Stagger cron minutes across hosts sharing registry quotas.
+          wud_cron: '0 6 * * *'
