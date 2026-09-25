@@ -122,7 +122,9 @@ esac
         command,
         cwd=TOOL,
         env=environment,
-        input="\n" * 10,
+        # Name the stack so a Netplan or ifupdown file on the test machine
+        # doesn't change the detected default.
+        input="networkmanager\n" + "\n" * 9,
         check=False,
         capture_output=True,
         text=True,
