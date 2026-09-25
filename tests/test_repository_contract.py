@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+AGENT_CONFIGS = ROOT / "ai-configs"
 
 TOOLS = (
     ROOT / "linux" / "networkmanager-cutover",
@@ -131,6 +132,9 @@ def test_repository_text_omits_process_and_environment_labels() -> None:
     )
     findings: list[str] = []
     for path in tracked_files():
+        # Agent configs name the agents they configure.
+        if path.is_relative_to(AGENT_CONFIGS):
+            continue
         if path.suffix.lower() not in {
             ".conf",
             ".example",

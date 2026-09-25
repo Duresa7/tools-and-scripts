@@ -57,6 +57,8 @@ Tools are grouped into five folders:
 | `automation/` | Ansible, Semaphore, backup, and migration tools |
 | `utilities/` | Small cross-platform helpers |
 
+The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files for AI coding agents. It isn't a tool folder, so the tool rules and checks below don't apply to it.
+
 ### Monitoring
 
 - [Prometheus target check](monitoring/prometheus-target-check/README.md): compare the active-target API with an expected set and reject missing, duplicate, unexpected, forbidden, or unhealthy targets.
