@@ -1,0 +1,16 @@
+{
+  "_comment_TargetGroup": "CUSTOMIZE: Set the directory group sAMAccountName. Only direct membership is checked.",
+  "TargetGroup": "replace-session-policy-group",
+  "_comment_WindowStart": "CUSTOMIZE: Set the inclusive local-time start in HH:mm.",
+  "WindowStart": "09:00",
+  "_comment_WindowEnd": "CUSTOMIZE: Set the exclusive local-time end in HH:mm. Earlier than start means overnight.",
+  "WindowEnd": "21:00",
+  "_comment_DailyBudgetMinutes": "CUSTOMIZE: Set the per-account daily observed usage budget in minutes.",
+  "DailyBudgetMinutes": 120,
+  "_comment_WarningMinutes": "CUSTOMIZE: Set warning lead times in minutes, or an empty array for no advance warnings.",
+  "WarningMinutes": [10, 3],
+  "_comment_StatePath": "CUSTOMIZE: Set a new local folder under a protected parent. Install stores code, effective config, state and log here.",
+  "StatePath": "C:\\ProgramData\\ExampleSessionPolicy",
+  "_comment_TaskName": "CUSTOMIZE: Set a unique scheduled task name in the root task folder.",
+  "TaskName": "Example session policy"
+}
