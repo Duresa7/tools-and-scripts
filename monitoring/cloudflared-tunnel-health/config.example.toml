@@ -1,0 +1,26 @@
+[tunnel]
+# CUSTOMIZE: Set the cloudflared metrics endpoint URL.
+metrics_url = "http://127.0.0.1:20241/metrics"
+# CUSTOMIZE: Set the systemd unit name for the cloudflared connector service.
+systemd_unit = "cloudflared.service"
+# CUSTOMIZE: Set the timeout in seconds for probes and systemctl.
+timeout_seconds = 5.0
+
+[metrics]
+# CUSTOMIZE: Set destination .prom file path for node_exporter.
+output_path = "/var/lib/prometheus/node-exporter/cloudflared-tunnel.prom"
+# CUSTOMIZE: Set the Prometheus metric family prefix.
+metric_prefix = "cloudflared_tunnel"
+
+# Origin HTTP health checks. Repeat [[origins]] for each backend service.
+[[origins]]
+# CUSTOMIZE: Short service label for the origin metric.
+name = "web"
+# CUSTOMIZE: Origin probe URL (status 200 to 399 is up).
+url = "http://127.0.0.1:8080/health"
+
+[[origins]]
+# CUSTOMIZE: Short service label for the origin metric.
+name = "api"
+# CUSTOMIZE: Origin probe URL (status 200 to 399 is up).
+url = "http://192.0.2.10:8000/health"
