@@ -1,0 +1,63 @@
+---
+# One manifest describes one Semaphore project. Copy this file to
+# manifest.local.yml, or keep your copy beside the Ansible project it describes.
+project:
+  # CUSTOMIZE: Set the Semaphore project name this manifest owns.
+  name: Example-Maintenance
+  repository:
+    # CUSTOMIZE: Set the repository record name.
+    name: example-maintenance
+    # CUSTOMIZE: Set the playbook directory as the Semaphore host sees it, or a Git URL.
+    path: /srv/ansible/example-maintenance
+    # CUSTOMIZE: Set the branch for a Git URL. Leave it empty for a local directory.
+    branch: ""
+  inventory:
+    # CUSTOMIZE: Set the inventory record name.
+    name: example-maintenance-hosts
+    # CUSTOMIZE: Set the inventory file path as the Semaphore host sees it.
+    path: /srv/ansible/example-maintenance/inventory/hosts.yml
+    # CUSTOMIZE: Set the project-scoped SSH credential name used by the repository and inventory.
+    credential: example-ssh-key
+  environment:
+    # CUSTOMIZE: Set the variable group name.
+    name: Locale
+    # CUSTOMIZE: Set the environment variables passed to every task. Values must be strings.
+    variables:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+    # CUSTOMIZE: Set extra Ansible variables, or leave this mapping empty. Never put secrets here.
+    extra_variables: {}
+
+# CUSTOMIZE: Keep All first, then list one view for each group of templates.
+views:
+  - All
+  - Package Updates
+  - Service Checks
+
+# CUSTOMIZE: List every task template this project should have. Each view must appear above.
+templates:
+  - name: "Package Updates: All Hosts (dry run)"
+    view: Package Updates
+    playbook: playbooks/package-update.yml
+    arguments: ["--check"]
+    description: Ansible check mode. Reports predicted package changes without applying them.
+  - name: "Package Updates: All Hosts"
+    view: Package Updates
+    playbook: playbooks/package-update.yml
+    arguments: []
+  - name: "Package Updates: Single Host or Group"
+    view: Package Updates
+    playbook: playbooks/package-update.yml
+    arguments: []
+    survey:
+      - name: target
+        title: Target host or group
+        description: Inventory host or group name, for example web-01.example.net.
+        type: ""
+        required: true
+        values: []
+
+  - name: "Service Checks: All Hosts"
+    view: Service Checks
+    playbook: playbooks/service-status.yml
+    arguments: ["--diff"]

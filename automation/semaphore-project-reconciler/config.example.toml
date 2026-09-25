@@ -1,0 +1,21 @@
+[semaphore]
+# CUSTOMIZE: Set the Semaphore base URL, without /api.
+url = "http://127.0.0.1:3000"
+# CUSTOMIZE: Set only the environment-variable name that holds the API token. Never put the token here.
+token_env = "SEMAPHORE_API_TOKEN"
+# CUSTOMIZE: Set the request timeout in seconds.
+timeout_seconds = 30
+# CUSTOMIZE: For HTTPS with a private CA, set its local PEM path. Otherwise leave this empty.
+ca_file = ""
+# CUSTOMIZE: Set true only when plain HTTP to a host that isn't loopback crosses a trusted network.
+allow_insecure_http = false
+
+[credential]
+# CUSTOMIZE: Set the SSH login Semaphore uses with the managed credential.
+login = "ansible"
+# CUSTOMIZE: Set only the environment-variable name that holds the SSH private key. Never put the key here.
+private_key_env = "SEMAPHORE_SSH_PRIVATE_KEY"
+
+[manifests]
+# CUSTOMIZE: List every manifest to reconcile. Relative paths start at this file's folder.
+paths = ["manifest.local.yml"]

@@ -1,0 +1,1 @@
+"""Semaphore project automation."""
