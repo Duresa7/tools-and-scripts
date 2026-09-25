@@ -41,7 +41,7 @@ Tested status: Locally checked; live matrix pending.
 The configurator runs read-only discovery. It detects the package version, whether `pveproxy` or `proxmox-backup-proxy` is installed, and the current layout of `proxmoxlib.js`. It writes `config.local.conf` with mode `0600` and refuses to overwrite an existing file.
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/virtualization/proxmox-subscription-notice"
+TOOL_DIR="$HOME/tools-and-scripts/linux/proxmox-subscription-notice"
 "$TOOL_DIR/configure.sh" --print-discovery
 "$TOOL_DIR/configure.sh"
 ```
@@ -51,7 +51,7 @@ TOOL_DIR="$HOME/tools-and-scripts/virtualization/proxmox-subscription-notice"
 Copy `config.example.conf` to `config.local.conf` and adjust settings:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/virtualization/proxmox-subscription-notice"
+TOOL_DIR="$HOME/tools-and-scripts/linux/proxmox-subscription-notice"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 cp "$TOOL_DIR/config.example.conf" "$CONFIG_PATH"
 chmod 600 "$CONFIG_PATH"
@@ -86,7 +86,7 @@ Applying the patch (`--apply`) or restoring stock checks (`--restore`) requires 
 `--check` is the non-destructive preview mode and the default mode:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/virtualization/proxmox-subscription-notice"
+TOOL_DIR="$HOME/tools-and-scripts/linux/proxmox-subscription-notice"
 "$TOOL_DIR/proxmox-subscription-notice.sh" --check
 ```
 
@@ -97,7 +97,7 @@ It inspects the target file, counts occurrences of stock and patched checks, rep
 To apply the patch:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/virtualization/proxmox-subscription-notice"
+TOOL_DIR="$HOME/tools-and-scripts/linux/proxmox-subscription-notice"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 sudo "$TOOL_DIR/proxmox-subscription-notice.sh" --config "$CONFIG_PATH" --apply
 ```
@@ -119,7 +119,7 @@ After modifying the file, it restarts the web proxy service (`pveproxy` or `prox
 To restore the original stock subscription checks:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/virtualization/proxmox-subscription-notice"
+TOOL_DIR="$HOME/tools-and-scripts/linux/proxmox-subscription-notice"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 sudo "$TOOL_DIR/proxmox-subscription-notice.sh" --config "$CONFIG_PATH" --restore
 ```

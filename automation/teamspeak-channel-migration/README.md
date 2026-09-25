@@ -38,14 +38,14 @@ The configurator writes ignored `config.local.toml` and refuses to replace it. W
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/migrations/teamspeak-channel-migration"
+TOOL_DIR="$HOME/tools-and-scripts/automation/teamspeak-channel-migration"
 python "$TOOL_DIR/configure.py"
 ```
 
 PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/migrations/teamspeak-channel-migration'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/automation/teamspeak-channel-migration'
 py (Join-Path $ToolDir 'configure.py')
 ```
 
@@ -62,7 +62,7 @@ The discovery session authenticates, lists handlers, selects one tab, and reads 
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/migrations/teamspeak-channel-migration"
+TOOL_DIR="$HOME/tools-and-scripts/automation/teamspeak-channel-migration"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"

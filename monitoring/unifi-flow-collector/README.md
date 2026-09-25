@@ -36,7 +36,7 @@ Platform: Python runtime on a local host; the service example targets Linux with
 Run setup as an ordinary user. It creates only local configuration and makes no network requests. Preview reads the controller but sends nothing to HEC and writes no checkpoint. Sending requires `--send`; accepted HEC events cannot be rolled back by this tool. Exit codes are 0 for success, 1 for input failure, 2 for command syntax, and 3 for a failed single poll.
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/security-monitoring/unifi-flow-collector"
+TOOL_DIR="$HOME/tools-and-scripts/monitoring/unifi-flow-collector"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 python "$TOOL_DIR/configure.py" \
   --controller-url https://unifi.example.net \
@@ -51,7 +51,7 @@ Review every `CUSTOMIZE:` marker. The configurator writes mode `0600` on POSIX a
 Copy the [example TOML](config.example.toml) to the ignored local name, then edit it:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/security-monitoring/unifi-flow-collector"
+TOOL_DIR="$HOME/tools-and-scripts/monitoring/unifi-flow-collector"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 (umask 077; set -C; cat "$TOOL_DIR/config.example.toml" > "$CONFIG_PATH")
 ${EDITOR:-vi} "$CONFIG_PATH"
@@ -141,7 +141,7 @@ The tool cannot remove accepted HEC events. Any index cleanup is a separate admi
 - Another collector holds the lock: stop the other process; do not unlink its lock while it runs.
 - Repeated service errors: inspect `journalctl -u unifi-flow-collector.service`. Continuous mode retries with delays from 30 to 600 seconds.
 
-Run local checks from the repository root with `python -m pytest -q security-monitoring/unifi-flow-collector/tests`. Tests use only local fake HTTP servers.
+Run local checks from the repository root with `python -m pytest -q monitoring/unifi-flow-collector/tests`. Tests use only local fake HTTP servers.
 
 ## Exit behavior
 

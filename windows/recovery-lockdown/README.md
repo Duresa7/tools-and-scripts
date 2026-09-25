@@ -178,9 +178,9 @@ This tool does not record prior policy values or automatically restore them. To 
 Run local checks from the repository root:
 
 ```powershell
-python -m pytest -q endpoint-management/windows-recovery-lockdown/tests
-python -m ruff check endpoint-management/windows-recovery-lockdown
-python -m ruff format --check endpoint-management/windows-recovery-lockdown
+python -m pytest -q windows/recovery-lockdown/tests
+python -m ruff check windows/recovery-lockdown
+python -m ruff format --check windows/recovery-lockdown
 ```
 
 The tests invoke `pwsh -NoProfile -NonInteractive`. Missing PowerShell is a failure, not a skipped test. Live validation must still cover startup, daily runs, policy readback, a standard-user recovery session, and deliberate repair rollback on a disposable Windows target.

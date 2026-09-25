@@ -41,7 +41,7 @@ This is a Linux-only tool. Tested status: Locally checked; live matrix pending.
 The configurator inspects local processes to detect the node_exporter textfile directory, checks the running kernel, and checks the newest installed kernel. It does not contact external hosts, run package managers, or modify existing files.
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/monitoring/dnf-updates-textfile"
+TOOL_DIR="$HOME/tools-and-scripts/monitoring/dnf-updates"
 "$TOOL_DIR/configure.sh" --print-discovery
 "$TOOL_DIR/configure.sh"
 ```
@@ -53,7 +53,7 @@ The second command prompts for the textfile path and kernel package, then writes
 Copy the example configuration and adjust the values:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/monitoring/dnf-updates-textfile"
+TOOL_DIR="$HOME/tools-and-scripts/monitoring/dnf-updates"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 cp "$TOOL_DIR/config.example.conf" "$CONFIG_PATH"
 chmod 600 "$CONFIG_PATH"
@@ -119,7 +119,7 @@ Installing files into `/usr/local/sbin/`, `/usr/local/etc/`, and `/etc/systemd/s
 Run the collector with `--dry-run` to inspect generated metrics on stdout without writing the collector's metrics file:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/monitoring/dnf-updates-textfile"
+TOOL_DIR="$HOME/tools-and-scripts/monitoring/dnf-updates"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 "$TOOL_DIR/dnf-updates-textfile.sh" --config "$CONFIG_PATH" --dry-run
 ```

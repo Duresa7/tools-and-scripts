@@ -15,16 +15,16 @@ import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SSH_TOOL = ROOT / "identity-and-access" / "ssh-key-rotation"
+SSH_TOOL = ROOT / "automation" / "ssh-key-rotation"
 BASH_HELP_SCRIPTS = (
-    "networking/networkmanager-cutover/networkmanager-cutover.sh",
-    "networking/networkmanager-cutover/configure.sh",
-    "virtualization/proxmox-subscription-notice/proxmox-subscription-notice.sh",
-    "virtualization/proxmox-subscription-notice/configure.sh",
-    "containers/compose-service-update/compose-service-update.sh",
-    "containers/compose-service-update/configure.sh",
-    "monitoring/dnf-updates-textfile/dnf-updates-textfile.sh",
-    "monitoring/dnf-updates-textfile/configure.sh",
+    "linux/networkmanager-cutover/networkmanager-cutover.sh",
+    "linux/networkmanager-cutover/configure.sh",
+    "linux/proxmox-subscription-notice/proxmox-subscription-notice.sh",
+    "linux/proxmox-subscription-notice/configure.sh",
+    "linux/compose-service-update/compose-service-update.sh",
+    "linux/compose-service-update/configure.sh",
+    "monitoring/dnf-updates/dnf-updates-textfile.sh",
+    "monitoring/dnf-updates/configure.sh",
 )
 
 INSTALL_HELP = {
@@ -38,7 +38,7 @@ INSTALL_HELP = {
         "Then install the collections from the SSH tool's requirements.yml."
     ),
     "ansible-collections": (
-        "Run from identity-and-access/ssh-key-rotation: "
+        "Run from automation/ssh-key-rotation: "
         "ansible-galaxy collection install --requirements-file requirements.yml"
     ),
     "powershell": "Install Windows PowerShell 5.1 or PowerShell 7 and add it to PATH.",
@@ -169,42 +169,42 @@ def check_python_help(runner: CheckRunner) -> None:
         ),
         (
             "Semaphore backup help",
-            "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
+            "automation/semaphore-sqlite-guard/semaphore_sqlite.py",
             ["backup", "--help"],
         ),
         (
             "Semaphore configurator help",
-            "backup-and-recovery/semaphore-sqlite-guard/configure.py",
+            "automation/semaphore-sqlite-guard/configure.py",
             ["--help"],
         ),
         (
             "Semaphore comparison help",
-            "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
+            "automation/semaphore-sqlite-guard/semaphore_sqlite.py",
             ["compare", "--help"],
         ),
         (
             "TeamSpeak export help",
-            "migrations/teamspeak-channel-migration/teamspeak_channels.py",
+            "automation/teamspeak-channel-migration/teamspeak_channels.py",
             ["export", "--help"],
         ),
         (
             "TeamSpeak import help",
-            "migrations/teamspeak-channel-migration/teamspeak_channels.py",
+            "automation/teamspeak-channel-migration/teamspeak_channels.py",
             ["import", "--help"],
         ),
         (
             "TeamSpeak configurator help",
-            "migrations/teamspeak-channel-migration/configure.py",
+            "automation/teamspeak-channel-migration/configure.py",
             ["--help"],
         ),
         (
             "SSH configurator help",
-            "identity-and-access/ssh-key-rotation/configure.py",
+            "automation/ssh-key-rotation/configure.py",
             ["--help"],
         ),
         (
             "SSH validator help",
-            "identity-and-access/ssh-key-rotation/tests/validate_project.py",
+            "automation/ssh-key-rotation/tests/validate_project.py",
             ["--help"],
         ),
         (
@@ -219,12 +219,12 @@ def check_python_help(runner: CheckRunner) -> None:
         ),
         (
             "UniFi flow collector help",
-            "security-monitoring/unifi-flow-collector/unifi_flow_collector.py",
+            "monitoring/unifi-flow-collector/unifi_flow_collector.py",
             ["--help"],
         ),
         (
             "UniFi flow collector configurator help",
-            "security-monitoring/unifi-flow-collector/configure.py",
+            "monitoring/unifi-flow-collector/configure.py",
             ["--help"],
         ),
         (
@@ -311,7 +311,7 @@ def linux_check_script(root: str) -> str:
                 f"bash {shlex.quote(script)} --help >/dev/null"
                 for script in BASH_HELP_SCRIPTS
             ),
-            "ssh_tool=identity-and-access/ssh-key-rotation",
+            "ssh_tool=automation/ssh-key-rotation",
             "inventory=$(mktemp --suffix=.yml)",
             "trap 'rm -f \"$inventory\"' EXIT",
             'cp "$ssh_tool/inventory/hosts.yml.example" "$inventory"',
@@ -419,7 +419,7 @@ def run_node_checks(runner: CheckRunner) -> None:
         runner.command(
             f"Node syntax {name}", ["node", "--check", script], install_key="node"
         )
-    preview = ROOT / "development" / "git-preview-server"
+    preview = ROOT / "utilities" / "git-preview-server"
     runner.command(
         "Git preview server help",
         ["node", str(preview / "serve.mjs"), "--help"],
@@ -470,17 +470,11 @@ def main() -> int:
                 "-q",
                 str(ROOT / "check.py"),
                 str(ROOT / "tests"),
-                str(ROOT / "networking"),
-                str(ROOT / "monitoring"),
-                str(ROOT / "backup-and-recovery"),
-                str(ROOT / "migrations"),
-                str(ROOT / "identity-and-access"),
                 str(ROOT / "automation"),
-                str(ROOT / "containers"),
-                str(ROOT / "development"),
-                str(ROOT / "endpoint-management"),
-                str(ROOT / "security-monitoring"),
-                str(ROOT / "virtualization"),
+                str(ROOT / "linux"),
+                str(ROOT / "monitoring"),
+                str(ROOT / "utilities"),
+                str(ROOT / "windows"),
             ],
         )
         parse_examples(runner)

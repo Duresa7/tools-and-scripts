@@ -38,14 +38,14 @@ The configurator checks `SEMAPHORE_DB_PATH`, `/var/lib/semaphore/database.sqlite
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/backup-and-recovery/semaphore-sqlite-guard"
+TOOL_DIR="$HOME/tools-and-scripts/automation/semaphore-sqlite-guard"
 python "$TOOL_DIR/configure.py" --database /var/lib/semaphore/database.sqlite
 ```
 
 PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/backup-and-recovery/semaphore-sqlite-guard'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/automation/semaphore-sqlite-guard'
 $DatabasePath = 'C:\ProgramData\Semaphore\database.sqlite'
 py (Join-Path $ToolDir 'configure.py') --database $DatabasePath
 ```
@@ -57,7 +57,7 @@ The configurator writes ignored `config.local.toml` and refuses to replace an ex
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/backup-and-recovery/semaphore-sqlite-guard"
+TOOL_DIR="$HOME/tools-and-scripts/automation/semaphore-sqlite-guard"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"

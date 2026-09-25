@@ -117,7 +117,7 @@ Both commands leave remote state unchanged. Planned changes return status 2. Ext
 
 ## Changes made
 
-Before applying, take a verified backup. For SQLite deployments, follow [Semaphore SQLite guard](../../backup-and-recovery/semaphore-sqlite-guard/README.md). Preserve the matching Semaphore configuration and encryption settings with your recovery set.
+Before applying, take a verified backup. For SQLite deployments, follow [Semaphore SQLite guard](../../automation/semaphore-sqlite-guard/README.md). Preserve the matching Semaphore configuration and encryption settings with your recovery set.
 
 After reviewing the plan and preparing any needed private-key variable:
 

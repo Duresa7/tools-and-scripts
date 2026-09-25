@@ -6,12 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 MARKER_COUNTS = {
-    "identity-and-access/ssh-key-rotation/identities/_identity-template.yml.example": 7,
-    "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example": 37,
-    "networking/networkmanager-cutover/config.example.conf": 11,
+    "automation/ssh-key-rotation/identities/_identity-template.yml.example": 7,
+    "automation/ssh-key-rotation/inventory/hosts.yml.example": 37,
+    "linux/networkmanager-cutover/config.example.conf": 11,
     "monitoring/prometheus-target-check/config.example.json": 10,
-    "backup-and-recovery/semaphore-sqlite-guard/config.example.toml": 4,
-    "migrations/teamspeak-channel-migration/config.example.toml": 13,
+    "automation/semaphore-sqlite-guard/config.example.toml": 4,
+    "automation/teamspeak-channel-migration/config.example.toml": 13,
 }
 
 HELP_CASES = (
@@ -21,12 +21,12 @@ HELP_CASES = (
         ("local JSON configuration", "bearer-token environment variable"),
     ),
     (
-        "backup-and-recovery/semaphore-sqlite-guard/semaphore_sqlite.py",
+        "automation/semaphore-sqlite-guard/semaphore_sqlite.py",
         ("backup", "--help"),
         ("overrides database_path", "must not exist"),
     ),
     (
-        "migrations/teamspeak-channel-migration/teamspeak_channels.py",
+        "automation/teamspeak-channel-migration/teamspeak_channels.py",
         ("export", "--help"),
         (
             "ClientQuery host",
@@ -34,18 +34,18 @@ HELP_CASES = (
         ),
     ),
     (
-        "migrations/teamspeak-channel-migration/teamspeak_channels.py",
+        "automation/teamspeak-channel-migration/teamspeak_channels.py",
         ("import", "--help"),
         ("target ServerQuery host", "environment variable containing your ServerQuery"),
     ),
 )
 
 TOOL_READMES = (
-    "identity-and-access/ssh-key-rotation/README.md",
-    "networking/networkmanager-cutover/README.md",
+    "automation/ssh-key-rotation/README.md",
+    "linux/networkmanager-cutover/README.md",
     "monitoring/prometheus-target-check/README.md",
-    "backup-and-recovery/semaphore-sqlite-guard/README.md",
-    "migrations/teamspeak-channel-migration/README.md",
+    "automation/semaphore-sqlite-guard/README.md",
+    "automation/teamspeak-channel-migration/README.md",
 )
 
 
@@ -58,7 +58,7 @@ def test_user_supplied_configuration_has_customize_markers() -> None:
 
 
 def test_ssh_inventory_marks_each_environment_owned_example_value() -> None:
-    path = ROOT / "identity-and-access/ssh-key-rotation/inventory/hosts.yml.example"
+    path = ROOT / "automation/ssh-key-rotation/inventory/hosts.yml.example"
     lines = path.read_text(encoding="utf-8").splitlines()
     owned_fragments = (
         "-example:",
@@ -130,9 +130,9 @@ def test_documented_commands_use_copied_local_configuration() -> None:
     prometheus_readme = (
         ROOT / "monitoring/prometheus-target-check/README.md"
     ).read_text(encoding="utf-8")
-    ansible_readme = (
-        ROOT / "identity-and-access/ssh-key-rotation/README.md"
-    ).read_text(encoding="utf-8")
+    ansible_readme = (ROOT / "automation/ssh-key-rotation/README.md").read_text(
+        encoding="utf-8"
+    )
 
     assert "config.example.json" in prometheus_readme
     assert "config.local.json" in prometheus_readme

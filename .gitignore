@@ -22,5 +22,5 @@ config.local.json
 config.local.toml
 manifest.local.yml
 
-identity-and-access/ssh-key-rotation/identities/*.yml
-identity-and-access/ssh-key-rotation/inventory/hosts.yml
+automation/ssh-key-rotation/identities/*.yml
+automation/ssh-key-rotation/inventory/hosts.yml

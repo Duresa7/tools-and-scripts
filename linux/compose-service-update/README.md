@@ -37,7 +37,7 @@ This is a Linux-only tool. Tested status: Locally checked; live matrix pending.
 The configurator inspects local Docker state to detect running Compose containers, project names, service names, and parent directories. It does not contact external hosts, pull images, or change container state.
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/containers/compose-service-update"
+TOOL_DIR="$HOME/tools-and-scripts/linux/compose-service-update"
 "$TOOL_DIR/configure.sh" --print-discovery
 "$TOOL_DIR/configure.sh"
 ```
@@ -49,7 +49,7 @@ The second command prompts for container, project, service, and root directory, 
 Copy the example configuration and adjust the values:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/containers/compose-service-update"
+TOOL_DIR="$HOME/tools-and-scripts/linux/compose-service-update"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 cp "$TOOL_DIR/config.example.conf" "$CONFIG_PATH"
 chmod 600 "$CONFIG_PATH"
@@ -90,7 +90,7 @@ Inspecting containers, pulling images, and recreating containers require access 
 Dry run is the first operational step before running an update. It queries Docker for the container's Compose files, validates that every file exists under the allowed root, and prints the exact commands without pulling images or recreating containers:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/containers/compose-service-update"
+TOOL_DIR="$HOME/tools-and-scripts/linux/compose-service-update"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 "$TOOL_DIR/compose-service-update.sh" --config "$CONFIG_PATH" --dry-run
 ```
@@ -110,7 +110,7 @@ Planned commands:
 Running without `--dry-run` executes the live update:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/containers/compose-service-update"
+TOOL_DIR="$HOME/tools-and-scripts/linux/compose-service-update"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 "$TOOL_DIR/compose-service-update.sh" --config "$CONFIG_PATH"
 ```

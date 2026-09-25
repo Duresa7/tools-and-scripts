@@ -47,59 +47,51 @@ python check.py
 
 ## Tool catalog
 
-### Networking
+Tools are grouped into five folders:
 
-- [NetworkManager cutover](networking/networkmanager-cutover/README.md): move a Linux interface to a prepared NetworkManager profile, verify its exact address, route, and DNS state, and restore the prior network configuration after a failed cutover.
-
-- [TCP reachability check](networking/tcp-reachability-check/README.md): probe a declared list of TCP endpoints from one host and fail when any target doesn't connect.
+| Folder | What's in it |
+|---|---|
+| `monitoring/` | Health checks, probes, and metrics or log collectors |
+| `windows/` | Windows workstation and domain tools |
+| `linux/` | Linux server, container, and hypervisor tools |
+| `automation/` | Ansible, Semaphore, backup, and migration tools |
+| `utilities/` | Small cross-platform helpers |
 
 ### Monitoring
 
 - [Prometheus target check](monitoring/prometheus-target-check/README.md): compare the active-target API with an expected set and reject missing, duplicate, unexpected, forbidden, or unhealthy targets.
 - [Grafana dashboard check](monitoring/grafana-dashboard-check/README.md): find overlapping or out-of-grid panels offline, then run every visible PromQL expression and reject errors and unexpected empty results.
-- [DNF updates textfile](monitoring/dnf-updates-textfile/README.md): export pending DNF updates by repository, pending security updates, and the reboot-required flag for the node_exporter textfile collector.
+- [DNF updates textfile](monitoring/dnf-updates/README.md): export pending DNF updates by repository, pending security updates, and the reboot-required flag for the node_exporter textfile collector.
 - [Cloudflared tunnel health](monitoring/cloudflared-tunnel-health/README.md): export the tunnel connection count and local origin HTTP health for the node_exporter textfile collector, keeping a stopped connector distinct from an unreachable metrics endpoint.
 - [TeamSpeak voice probe](monitoring/teamspeak-voice-probe/README.md): send a real TeamSpeak 3 Init1 handshake to local and public voice endpoints and tell a server fault from a relay or DNS fault.
 - [Minecraft status probe](monitoring/minecraft-status-probe/README.md): query a Java Edition server with the Server List Ping protocol and report version, players, and latency.
+- [UniFi flow collector](monitoring/unifi-flow-collector/README.md): poll UniFi traffic flows, map them to CIM field names, and preview or send them to Splunk HEC with a checkpoint.
 
-### Backup and recovery
+### Windows
 
-- [Semaphore SQLite guard](backup-and-recovery/semaphore-sqlite-guard/README.md): create an online SQLite backup and compare Semaphore records without printing stored credentials.
+- [Windows online logon policy](windows/online-logon-policy/README.md): create a gated workstation GPO that requires online domain-password sign-in, then check the applied result on each workstation.
+- [Windows workstation bootstrap](windows/workstation-bootstrap/README.md): rename a fresh Windows workstation and set up a key-only OpenSSH server behind a confirmation phrase.
+- [Windows recovery lockdown](windows/recovery-lockdown/README.md): keep the Windows Recovery Environment disabled through a SYSTEM scheduled task so a standard user can't reset the machine from the recovery menu.
+- [Windows session limits](windows/session-limits/README.md): enforce a daily sign-in window and usage budget for members of a directory group and sign them off when either runs out.
+- [Volume control panel](windows/volume-control-panel/volume-cp-open.bat): a batch file that opens the Windows sound control panel, handy for a mouse or keyboard shortcut.
 
-### Migrations
+### Linux
 
-- [TeamSpeak channel migration](migrations/teamspeak-channel-migration/README.md): export a channel tree through ClientQuery and recreate it through ServerQuery with a dry-run import path.
-
-### Identity and access
-
-- [SSH key rotation](identity-and-access/ssh-key-rotation/README.md): audit, stage, verify, and retire public keys across POSIX and Windows targets with an allowlist and a gated retirement step.
-- [Windows online logon policy](identity-and-access/windows-online-logon-policy/README.md): create a gated workstation GPO that requires online domain-password sign-in, then check the applied result on each workstation.
+- [NetworkManager cutover](linux/networkmanager-cutover/README.md): move a Linux interface to a prepared NetworkManager profile, verify its exact address, route, and DNS state, and restore the prior network configuration after a failed cutover.
+- [Proxmox subscription notice](linux/proxmox-subscription-notice/README.md): check, suppress, or restore the web UI subscription notice with an exact-count layout guard.
+- [Compose service update](linux/compose-service-update/README.md): pull and recreate one Compose service from the files its running container was started with, refusing any file outside an allowed root.
 
 ### Automation
 
+- [SSH key rotation](automation/ssh-key-rotation/README.md): audit, stage, verify, and retire public keys across POSIX and Windows targets with an allowlist and a gated retirement step.
 - [Semaphore project reconciler](automation/semaphore-project-reconciler/README.md): plan Semaphore project objects against reviewed manifests and apply the difference only behind an explicit gate.
+- [Semaphore SQLite guard](automation/semaphore-sqlite-guard/README.md): create an online SQLite backup and compare Semaphore records without printing stored credentials.
+- [TeamSpeak channel migration](automation/teamspeak-channel-migration/README.md): export a channel tree through ClientQuery and recreate it through ServerQuery with a dry-run import path.
 
-### Security monitoring
+### Utilities
 
-- [UniFi flow collector](security-monitoring/unifi-flow-collector/README.md): poll UniFi traffic flows, map them to CIM field names, and preview or send them to Splunk HEC with a checkpoint.
-
-### Endpoint management
-
-- [Windows workstation bootstrap](endpoint-management/windows-workstation-bootstrap/README.md): rename a fresh Windows workstation and set up a key-only OpenSSH server behind a confirmation phrase.
-- [Windows recovery lockdown](endpoint-management/windows-recovery-lockdown/README.md): keep the Windows Recovery Environment disabled through a SYSTEM scheduled task so a standard user can't reset the machine from the recovery menu.
-- [Windows session limits](endpoint-management/windows-session-limits/README.md): enforce a daily sign-in window and usage budget for members of a directory group and sign them off when either runs out.
-
-### Containers
-
-- [Compose service update](containers/compose-service-update/README.md): pull and recreate one Compose service from the files its running container was started with, refusing any file outside an allowed root.
-
-### Virtualization
-
-- [Proxmox subscription notice](virtualization/proxmox-subscription-notice/README.md): check, suppress, or restore the web UI subscription notice with an exact-count layout guard.
-
-### Development
-
-- [Git preview server](development/git-preview-server/README.md): serve only the tracked files of a git working tree on loopback for local HTML and SVG previews.
+- [TCP reachability check](utilities/tcp-reachability-check/README.md): probe a declared list of TCP endpoints from one host and fail when any target doesn't connect.
+- [Git preview server](utilities/git-preview-server/README.md): serve only the tracked files of a git working tree on loopback for local HTML and SVG previews.
 
 ## Status and safety
 
@@ -107,25 +99,25 @@ python check.py
 
 | Tool | Platform | Runtime | Privilege | Changes state | Preview | Rollback | Tested status |
 |---|---|---|---|---|---|---|---|
-| NetworkManager cutover | Linux | Bash 4+ | Elevation for cutover | Network files, profiles, services | Yes | Automatic on failed validation | Locally checked; live matrix pending |
 | Prometheus target check | Linux, macOS, Windows | Python 3.11+ | Ordinary user | No | Read-only command | Not applicable | Locally checked; live matrix pending |
-| Semaphore SQLite guard | Linux, macOS, Windows | Python 3.11+ | Read access to database; write access to backup folder | Creates a backup file | Comparison is read-only | Original database is never replaced | Locally checked; live matrix pending |
-| TeamSpeak channel migration | Linux, macOS, Windows | Python 3.11+ | Query accounts only | Export writes JSON; import creates channels | Import dry run | Keep the export and remove created channels manually | Locally checked; live matrix pending |
-| SSH key rotation | Linux controller; POSIX and Windows targets | Ansible Core 2.17+ | Per-target settings | Authorized-key files | Audit and check mode | Replacement is verified before retirement | Locally checked; live matrix pending |
-| TCP reachability check | Linux, macOS, Windows | PowerShell 7 or Windows PowerShell 5.1 | Ordinary user | No | Read-only command | Not applicable | Locally checked; live matrix pending |
 | Grafana dashboard check | Linux, macOS, Windows | Python 3.11+ | Ordinary user | No | Read-only command; query preview | Not applicable | Locally checked; live matrix pending |
 | DNF updates textfile | Linux with DNF | Bash 4+ | Write access to the textfile directory | One metrics file | Dry run | Disable the timer and remove the file | Locally checked; live matrix pending |
 | Cloudflared tunnel health | Linux with systemd | Python 3.11+ | Write access to the textfile directory | One metrics file | Standard-output preview | Disable the timer and remove the file | Locally checked; live matrix pending |
 | TeamSpeak voice probe | Linux, macOS, Windows | Python 3.11+ | Ordinary user | Metrics file when configured | Standard-output preview | Remove the metrics file | Locally checked; live matrix pending |
 | Minecraft status probe | Linux, macOS, Windows | Python 3.11+ | Ordinary user | No | Read-only command | Not applicable | Locally checked; live matrix pending |
-| Windows online logon policy | Windows domain | Windows PowerShell 5.1+ | GPO and OU link rights; elevated workstation check | GPO settings and OU link | WhatIf | Unlink or restore the GPO manually | Locally checked; live matrix pending |
-| Semaphore project reconciler | Linux, macOS, Windows | Python 3.11+ with PyYAML | Ordinary user; scoped API token | Semaphore projects and related objects | Plan by default | Restore from a Semaphore backup | Locally checked; live matrix pending |
 | UniFi flow collector | Linux, macOS, Windows; systemd example | Python 3.11+ | Ordinary user or service account | HEC events and a checkpoint file | Preview by default | Stop collection; sent events remain | Locally checked; live matrix pending |
+| Windows online logon policy | Windows domain | Windows PowerShell 5.1+ | GPO and OU link rights; elevated workstation check | GPO settings and OU link | WhatIf | Unlink or restore the GPO manually | Locally checked; live matrix pending |
 | Windows workstation bootstrap | Windows 10 and 11 | Windows PowerShell 5.1 or PowerShell 7 | Elevation | Computer name, OpenSSH, firewall, sshd config | WhatIf | Documented manual steps before domain join | Locally checked; live matrix pending |
 | Windows recovery lockdown | Windows 11 | Windows PowerShell 5.1 or PowerShell 7 | Elevation; SYSTEM task | Scheduled task, WinRE state, recovery policy | WhatIf and read-only check | Remove the task and re-enable WinRE | Locally checked; live matrix pending |
 | Windows session limits | Domain-joined Windows | Windows PowerShell 5.1+ | Elevation to install; SYSTEM task | Scheduled task, usage state, session sign-out | Preview by default and WhatIf | Remove the task; a sign-out can't be undone | Locally checked; live matrix pending |
-| Compose service update | Linux | Bash 4+ with Docker Compose v2 | Docker socket access | Service image and container | Dry run | Rerun with the previous image tag or digest | Locally checked; live matrix pending |
+| NetworkManager cutover | Linux | Bash 4+ | Elevation for cutover | Network files, profiles, services | Yes | Automatic on failed validation | Locally checked; live matrix pending |
 | Proxmox subscription notice | Proxmox VE, Proxmox Backup Server | Bash 4+ | Elevation for apply and restore | Web UI toolkit file, proxy service | Check mode | Restore mode or package reinstall | Locally checked; live matrix pending |
+| Compose service update | Linux | Bash 4+ with Docker Compose v2 | Docker socket access | Service image and container | Dry run | Rerun with the previous image tag or digest | Locally checked; live matrix pending |
+| SSH key rotation | Linux controller; POSIX and Windows targets | Ansible Core 2.17+ | Per-target settings | Authorized-key files | Audit and check mode | Replacement is verified before retirement | Locally checked; live matrix pending |
+| Semaphore project reconciler | Linux, macOS, Windows | Python 3.11+ with PyYAML | Ordinary user; scoped API token | Semaphore projects and related objects | Plan by default | Restore from a Semaphore backup | Locally checked; live matrix pending |
+| Semaphore SQLite guard | Linux, macOS, Windows | Python 3.11+ | Read access to database; write access to backup folder | Creates a backup file | Comparison is read-only | Original database is never replaced | Locally checked; live matrix pending |
+| TeamSpeak channel migration | Linux, macOS, Windows | Python 3.11+ | Query accounts only | Export writes JSON; import creates channels | Import dry run | Keep the export and remove created channels manually | Locally checked; live matrix pending |
+| TCP reachability check | Linux, macOS, Windows | PowerShell 7 or Windows PowerShell 5.1 | Ordinary user | No | Read-only command | Not applicable | Locally checked; live matrix pending |
 | Git preview server | Linux, macOS, Windows | Node.js 20+ | Ordinary user | No | Not applicable | Not applicable | Locally checked; live matrix pending |
 
 Every state-changing tool documents the exact confirmation, backup, and rollback behavior in its own README. Don't test network cutovers, key retirement, channel creation, sign-in policy, session sign-out, or recovery lockdown against an active system that can't tolerate interruption.

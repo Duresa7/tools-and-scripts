@@ -36,7 +36,7 @@ This is a Linux-only tool. Run a live cutover from a local console, hypervisor c
 The configurator reads local interface, route, DNS, profile, and stack information. It does not contact another machine or change network state.
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/networking/networkmanager-cutover"
+TOOL_DIR="$HOME/tools-and-scripts/linux/networkmanager-cutover"
 "$TOOL_DIR/configure.sh" --print-discovery
 "$TOOL_DIR/configure.sh"
 ```
@@ -48,7 +48,7 @@ The second command writes ignored `config.local.conf` with mode `0600`. It refus
 Copy the example and replace every `CUSTOMIZE:` value:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/networking/networkmanager-cutover"
+TOOL_DIR="$HOME/tools-and-scripts/linux/networkmanager-cutover"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 cp "$TOOL_DIR/config.example.conf" "$CONFIG_PATH"
 chmod 600 "$CONFIG_PATH"
@@ -98,7 +98,7 @@ Guided setup, manual editing, dry run, and post-reboot validation use the ordina
 ## Dry run
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/networking/networkmanager-cutover"
+TOOL_DIR="$HOME/tools-and-scripts/linux/networkmanager-cutover"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 "$TOOL_DIR/networkmanager-cutover.sh" --config "$CONFIG_PATH" --dry-run
 ```
@@ -110,7 +110,7 @@ The dry run checks dependencies, configuration syntax, source ownership, candida
 Run the live operation only with an open console:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/networking/networkmanager-cutover"
+TOOL_DIR="$HOME/tools-and-scripts/linux/networkmanager-cutover"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 sudo "$TOOL_DIR/networkmanager-cutover.sh" --config "$CONFIG_PATH" \
   --confirm CUTOVER_NETWORK_CONNECTION

@@ -41,14 +41,14 @@ The configurator inspects the working tree and generates `config.local.json`. It
 POSIX (Linux / macOS):
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/development/git-preview-server"
+TOOL_DIR="$HOME/tools-and-scripts/utilities/git-preview-server"
 node "$TOOL_DIR/configure.mjs" --root "$HOME/projects/documentation" --port 8123
 ```
 
 Windows PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/development/git-preview-server'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/utilities/git-preview-server'
 node (Join-Path $ToolDir 'configure.mjs') --root (Join-Path $HOME 'projects/documentation') --port 8123
 ```
 
@@ -59,7 +59,7 @@ Copy `config.example.json` to `config.local.json` and adjust values:
 POSIX (Linux / macOS):
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/development/git-preview-server"
+TOOL_DIR="$HOME/tools-and-scripts/utilities/git-preview-server"
 CONFIG_PATH="$TOOL_DIR/config.local.json"
 cp "$TOOL_DIR/config.example.json" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
@@ -68,7 +68,7 @@ ${EDITOR:-vi} "$CONFIG_PATH"
 Windows PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/development/git-preview-server'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/utilities/git-preview-server'
 $ConfigPath = Join-Path $ToolDir 'config.local.json'
 Copy-Item (Join-Path $ToolDir 'config.example.json') $ConfigPath
 notepad $ConfigPath
@@ -101,7 +101,7 @@ Use `--dry-run` to verify working tree detection, check configuration, and see t
 POSIX:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/development/git-preview-server"
+TOOL_DIR="$HOME/tools-and-scripts/utilities/git-preview-server"
 CONFIG_PATH="$TOOL_DIR/config.local.json"
 node "$TOOL_DIR/serve.mjs" --config "$CONFIG_PATH" --dry-run
 ```
@@ -109,7 +109,7 @@ node "$TOOL_DIR/serve.mjs" --config "$CONFIG_PATH" --dry-run
 Windows PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/development/git-preview-server'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/utilities/git-preview-server'
 $ConfigPath = Join-Path $ToolDir 'config.local.json'
 node (Join-Path $ToolDir 'serve.mjs') --config $ConfigPath --dry-run
 ```

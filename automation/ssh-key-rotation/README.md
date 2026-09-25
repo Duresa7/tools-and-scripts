@@ -34,7 +34,7 @@ Ansible controllers are Linux-based. Windows 11 and Windows Server 2025 are mana
 Install the pinned collections:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/identity-and-access/ssh-key-rotation"
+TOOL_DIR="$HOME/tools-and-scripts/automation/ssh-key-rotation"
 cd "$TOOL_DIR"
 ansible-galaxy collection install --requirements-file requirements.yml
 ```
