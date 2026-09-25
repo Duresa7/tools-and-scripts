@@ -20,6 +20,7 @@ channels.json
 config.local.conf
 config.local.json
 config.local.toml
+manifest.local.yml
 
 identity-and-access/ssh-key-rotation/identities/*.yml
 identity-and-access/ssh-key-rotation/inventory/hosts.yml

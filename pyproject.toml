@@ -7,6 +7,21 @@ testpaths = [
   "backup-and-recovery/semaphore-sqlite-guard/tests",
   "migrations/teamspeak-channel-migration/tests",
   "identity-and-access/ssh-key-rotation/tests",
+  "virtualization/proxmox-subscription-notice/tests",
+  "containers/compose-service-update/tests",
+  "monitoring/dnf-updates-textfile/tests",
+  "monitoring/cloudflared-tunnel-health/tests",
+  "monitoring/teamspeak-voice-probe/tests",
+  "monitoring/minecraft-status-probe/tests",
+  "monitoring/grafana-dashboard-check/tests",
+  "networking/tcp-reachability-check/tests",
+  "automation/semaphore-project-reconciler/tests",
+  "security-monitoring/unifi-flow-collector/tests",
+  "identity-and-access/windows-online-logon-policy/tests",
+  "endpoint-management/windows-workstation-bootstrap/tests",
+  "endpoint-management/windows-recovery-lockdown/tests",
+  "endpoint-management/windows-session-limits/tests",
+  "development/git-preview-server/tests",
 ]
 
 [tool.ruff]

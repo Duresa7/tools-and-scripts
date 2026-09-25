@@ -16,6 +16,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SSH_TOOL = ROOT / "identity-and-access" / "ssh-key-rotation"
+BASH_HELP_SCRIPTS = (
+    "networking/networkmanager-cutover/networkmanager-cutover.sh",
+    "networking/networkmanager-cutover/configure.sh",
+    "virtualization/proxmox-subscription-notice/proxmox-subscription-notice.sh",
+    "virtualization/proxmox-subscription-notice/configure.sh",
+    "containers/compose-service-update/compose-service-update.sh",
+    "containers/compose-service-update/configure.sh",
+    "monitoring/dnf-updates-textfile/dnf-updates-textfile.sh",
+    "monitoring/dnf-updates-textfile/configure.sh",
+)
 
 INSTALL_HELP = {
     "python": "Install Python 3.11 or newer, then recreate the virtual environment.",
@@ -32,6 +42,7 @@ INSTALL_HELP = {
         "ansible-galaxy collection install --requirements-file requirements.yml"
     ),
     "powershell": "Install Windows PowerShell 5.1 or PowerShell 7 and add it to PATH.",
+    "node": "Install Node.js 20 or newer and add node to PATH.",
     "gitleaks": (
         "Install Gitleaks from https://github.com/gitleaks/gitleaks/releases "
         "and add gitleaks to PATH."
@@ -196,6 +207,71 @@ def check_python_help(runner: CheckRunner) -> None:
             "identity-and-access/ssh-key-rotation/tests/validate_project.py",
             ["--help"],
         ),
+        (
+            "Semaphore reconciler help",
+            "automation/semaphore-project-reconciler/reconcile_semaphore.py",
+            ["--help"],
+        ),
+        (
+            "Semaphore reconciler configurator help",
+            "automation/semaphore-project-reconciler/configure.py",
+            ["--help"],
+        ),
+        (
+            "UniFi flow collector help",
+            "security-monitoring/unifi-flow-collector/unifi_flow_collector.py",
+            ["--help"],
+        ),
+        (
+            "UniFi flow collector configurator help",
+            "security-monitoring/unifi-flow-collector/configure.py",
+            ["--help"],
+        ),
+        (
+            "Grafana layout check help",
+            "monitoring/grafana-dashboard-check/grafana_dashboards.py",
+            ["layout", "--help"],
+        ),
+        (
+            "Grafana query check help",
+            "monitoring/grafana-dashboard-check/grafana_dashboards.py",
+            ["queries", "--help"],
+        ),
+        (
+            "Grafana configurator help",
+            "monitoring/grafana-dashboard-check/configure.py",
+            ["--help"],
+        ),
+        (
+            "Minecraft probe help",
+            "monitoring/minecraft-status-probe/minecraft_status_probe.py",
+            ["--help"],
+        ),
+        (
+            "Minecraft configurator help",
+            "monitoring/minecraft-status-probe/configure.py",
+            ["--help"],
+        ),
+        (
+            "Tunnel health help",
+            "monitoring/cloudflared-tunnel-health/tunnel_health.py",
+            ["--help"],
+        ),
+        (
+            "Tunnel health configurator help",
+            "monitoring/cloudflared-tunnel-health/configure.py",
+            ["--help"],
+        ),
+        (
+            "TeamSpeak probe help",
+            "monitoring/teamspeak-voice-probe/teamspeak_probe.py",
+            ["--help"],
+        ),
+        (
+            "TeamSpeak probe configurator help",
+            "monitoring/teamspeak-voice-probe/configure.py",
+            ["--help"],
+        ),
     )
     for name, relative_path, arguments in cases:
         runner.command(name, [sys.executable, str(ROOT / relative_path), *arguments])
@@ -231,9 +307,10 @@ def linux_check_script(root: str) -> str:
             f"cd {shlex.quote(root)}",
             f"bash -n {quoted_bash_files}",
             f"shellcheck {quoted_bash_files}",
-            "bash networking/networkmanager-cutover/networkmanager-cutover.sh "
-            "--help >/dev/null",
-            "bash networking/networkmanager-cutover/configure.sh --help >/dev/null",
+            *(
+                f"bash {shlex.quote(script)} --help >/dev/null"
+                for script in BASH_HELP_SCRIPTS
+            ),
             "ssh_tool=identity-and-access/ssh-key-rotation",
             "inventory=$(mktemp --suffix=.yml)",
             "trap 'rm -f \"$inventory\"' EXIT",
@@ -328,6 +405,33 @@ def run_powershell_checks(runner: CheckRunner) -> None:
     )
 
 
+def run_node_checks(runner: CheckRunner) -> None:
+    scripts = [
+        str(path)
+        for pattern in ("*.mjs", "*.js")
+        for path in sorted(ROOT.rglob(pattern))
+        if not {".git", ".venv", "node_modules"}.intersection(
+            path.relative_to(ROOT).parts
+        )
+    ]
+    for script in scripts:
+        name = Path(script).relative_to(ROOT).as_posix()
+        runner.command(
+            f"Node syntax {name}", ["node", "--check", script], install_key="node"
+        )
+    preview = ROOT / "development" / "git-preview-server"
+    runner.command(
+        "Git preview server help",
+        ["node", str(preview / "serve.mjs"), "--help"],
+        install_key="node",
+    )
+    runner.command(
+        "Git preview configurator help",
+        ["node", str(preview / "configure.mjs"), "--help"],
+        install_key="node",
+    )
+
+
 def run_gitleaks(runner: CheckRunner) -> None:
     runner.command(
         "Complete-history secret scan",
@@ -371,6 +475,12 @@ def main() -> int:
                 str(ROOT / "backup-and-recovery"),
                 str(ROOT / "migrations"),
                 str(ROOT / "identity-and-access"),
+                str(ROOT / "automation"),
+                str(ROOT / "containers"),
+                str(ROOT / "development"),
+                str(ROOT / "endpoint-management"),
+                str(ROOT / "security-monitoring"),
+                str(ROOT / "virtualization"),
             ],
         )
         parse_examples(runner)
@@ -387,6 +497,7 @@ def main() -> int:
 
     run_linux_checks(runner)
     run_powershell_checks(runner)
+    run_node_checks(runner)
     run_gitleaks(runner)
 
     if runner.failures:
