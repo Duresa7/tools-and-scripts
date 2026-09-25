@@ -1,0 +1,17 @@
+# Minecraft Java status probe configuration
+
+[probe]
+# CUSTOMIZE: Set the Minecraft server hostname or IP address.
+host = "mc.example.net"
+# CUSTOMIZE: Set the Minecraft server TCP port.
+port = 25565
+# CUSTOMIZE: Set the connection and status response timeout in seconds.
+timeout_seconds = 10.0
+# CUSTOMIZE: Set the protocol version to send in the handshake (767 is 1.21/1.21.1).
+protocol_version = 767
+# CUSTOMIZE: Set the output format: "text" or "json".
+format = "text"
+# CUSTOMIZE: Set whether to resolve _minecraft._tcp SRV records instead of direct connect.
+srv = false
+# CUSTOMIZE: Set whether to measure round-trip ping/pong latency.
+ping = false
