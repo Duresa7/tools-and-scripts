@@ -16,6 +16,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SSH_TOOL = ROOT / "automation" / "ssh-key-rotation"
+ANSIBLE_PROJECTS = (
+    "automation/ssh-key-rotation",
+    "automation/fleet-updates",
+    "automation/monitoring-exporters",
+    "automation/linux-access-baseline",
+)
 BASH_HELP_SCRIPTS = (
     "linux/networkmanager-cutover/networkmanager-cutover.sh",
     "linux/networkmanager-cutover/configure.sh",
@@ -25,6 +31,8 @@ BASH_HELP_SCRIPTS = (
     "linux/compose-service-update/configure.sh",
     "monitoring/dnf-updates/dnf-updates-textfile.sh",
     "monitoring/dnf-updates/configure.sh",
+    "linux/wazuh-hash-list-refresh/wazuh-hash-list-refresh.sh",
+    "linux/wazuh-hash-list-refresh/configure.sh",
 )
 
 INSTALL_HELP = {
@@ -38,8 +46,9 @@ INSTALL_HELP = {
         "Then install the collections from the SSH tool's requirements.yml."
     ),
     "ansible-collections": (
-        "Run from automation/ssh-key-rotation: "
-        "ansible-galaxy collection install --requirements-file requirements.yml"
+        "Run from each Ansible project under automation/: "
+        "ansible-galaxy collection install --requirements-file requirements.yml "
+        "--collections-path .ansible/collections"
     ),
     "powershell": "Install Windows PowerShell 5.1 or PowerShell 7 and add it to PATH.",
     "node": "Install Node.js 20 or newer and add node to PATH.",
@@ -272,6 +281,61 @@ def check_python_help(runner: CheckRunner) -> None:
             "monitoring/teamspeak-voice-probe/configure.py",
             ["--help"],
         ),
+        (
+            "UniFi dashboards build help",
+            "monitoring/unifi-flow-dashboards/unifi_flow_dashboards.py",
+            ["build", "--help"],
+        ),
+        (
+            "UniFi dashboards verify help",
+            "monitoring/unifi-flow-dashboards/unifi_flow_dashboards.py",
+            ["verify", "--help"],
+        ),
+        (
+            "UniFi dashboards configurator help",
+            "monitoring/unifi-flow-dashboards/configure.py",
+            ["--help"],
+        ),
+        (
+            "Discord relay help",
+            "monitoring/discord-alert-relay/alert_relay.py",
+            ["--help"],
+        ),
+        (
+            "Discord relay configurator help",
+            "monitoring/discord-alert-relay/configure.py",
+            ["--help"],
+        ),
+        (
+            "Fleet updates configurator help",
+            "automation/fleet-updates/configure.py",
+            ["--help"],
+        ),
+        (
+            "Fleet updates validator help",
+            "automation/fleet-updates/tests/validate_project.py",
+            ["--help"],
+        ),
+        (
+            "Monitoring exporters configurator help",
+            "automation/monitoring-exporters/configure.py",
+            ["--help"],
+        ),
+        (
+            "Monitoring exporters validator help",
+            "automation/monitoring-exporters/tests/validate_project.py",
+            ["--help"],
+        ),
+        (
+            "Linux access baseline configurator help",
+            "automation/linux-access-baseline/configure.py",
+            ["--help"],
+        ),
+        (
+            "Linux access baseline validator help",
+            "automation/linux-access-baseline/tests/validate_project.py",
+            ["--help"],
+        ),
     )
     for name, relative_path, arguments in cases:
         runner.command(name, [sys.executable, str(ROOT / relative_path), *arguments])
@@ -284,14 +348,7 @@ def linux_check_script(root: str) -> str:
         if not {".git", ".venv"}.intersection(path.relative_to(ROOT).parts)
     ]
     quoted_bash_files = " ".join(shlex.quote(path) for path in bash_files)
-    playbooks = (
-        "playbooks/ssh-identity-onboard.yml",
-        "playbooks/ssh-key-audit.yml",
-        "playbooks/ssh-key-stage.yml",
-        "playbooks/ssh-key-verify.yml",
-        "playbooks/ssh-key-retire.yml",
-    )
-    quoted_playbooks = " ".join(shlex.quote(path) for path in playbooks)
+    quoted_projects = " ".join(shlex.quote(path) for path in ANSIBLE_PROJECTS)
     extra_bin = os.environ.get("TOOLS_AND_SCRIPTS_WSL_BIN", "")
     collections = os.environ.get("TOOLS_AND_SCRIPTS_ANSIBLE_COLLECTIONS", "")
     lines = ["set -eu"]
@@ -311,14 +368,16 @@ def linux_check_script(root: str) -> str:
                 f"bash {shlex.quote(script)} --help >/dev/null"
                 for script in BASH_HELP_SCRIPTS
             ),
-            "ssh_tool=automation/ssh-key-rotation",
             "inventory=$(mktemp --suffix=.yml)",
             "trap 'rm -f \"$inventory\"' EXIT",
-            'cp "$ssh_tool/inventory/hosts.yml.example" "$inventory"',
-            'cd "$ssh_tool"',
-            "ansible-lint --offline",
-            f"for playbook in {quoted_playbooks}; do "
-            'ansible-playbook -i "$inventory" --syntax-check "$playbook"; done',
+            f"for project in {quoted_projects}; do "
+            '(cd "$project" && '
+            'cp inventory/hosts.yml.example "$inventory" && '
+            "ansible-lint --offline && "
+            "for playbook in playbooks/*.yml; do "
+            'case "${playbook##*/}" in _*) continue ;; esac; '
+            'ansible-playbook -i "$inventory" --syntax-check "$playbook" || exit 1; '
+            "done) || exit 1; done",
         )
     )
     return "\n".join(lines)

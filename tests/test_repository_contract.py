@@ -25,6 +25,13 @@ TOOLS = (
     ROOT / "windows" / "recovery-lockdown",
     ROOT / "windows" / "session-limits",
     ROOT / "utilities" / "git-preview-server",
+    ROOT / "linux" / "wazuh-hash-list-refresh",
+    ROOT / "windows" / "installer-signature-check",
+    ROOT / "monitoring" / "unifi-flow-dashboards",
+    ROOT / "monitoring" / "discord-alert-relay",
+    ROOT / "automation" / "fleet-updates",
+    ROOT / "automation" / "monitoring-exporters",
+    ROOT / "automation" / "linux-access-baseline",
 )
 
 README_SECTIONS = (
@@ -65,6 +72,16 @@ LOCAL_CONFIGS = (
     "windows/session-limits/config.local.json",
     "utilities/git-preview-server/config.local.json",
     "automation/semaphore-project-reconciler/manifest.local.yml",
+    "linux/wazuh-hash-list-refresh/config.local.conf",
+    "windows/installer-signature-check/config.local.json",
+    "monitoring/unifi-flow-dashboards/config.local.toml",
+    "monitoring/discord-alert-relay/config.local.toml",
+    "automation/fleet-updates/inventory/hosts.yml",
+    "automation/fleet-updates/config.local.yml",
+    "automation/monitoring-exporters/inventory/hosts.yml",
+    "automation/linux-access-baseline/inventory/hosts.yml",
+    "automation/linux-access-baseline/config.local.yml",
+    "automation/linux-access-baseline/vars/automation-key.yml",
 )
 
 

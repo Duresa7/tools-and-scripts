@@ -86,6 +86,13 @@ Record the exact operating-system build, NetworkManager or Netplan version, Pyth
 | Compose service update | Single and multi-file projects; file outside the allowed root refused; dry run; pull then recreate; previous-tag rollback | Pending |
 | Proxmox subscription notice | Check, apply, and restore on the current toolkit; unsupported layout refused; package upgrade restores the stock file; proxy restart | Pending |
 | Git preview server | Tracked files served; untracked, ignored, and dotfile paths refused; traversal refused; git failure fails closed; non-loopback bind needs the opt-in flag | Pending |
+| Wazuh hash list refresh | Normal feed; empty or failed feed keeps the old list; atomic swap; manager restart and verification; list registered and matched by a rule; systemd timer run | Pending |
+| Installer signature check | Signed installer from the expected publisher; look-alike publisher refused; unsigned file refused; hash match and mismatch; source-host guard | Pending |
+| UniFi flow dashboards | Build and deploy the generated app; verify against a live Splunk with collector data; state-changing query refused; token never printed | Pending |
+| Discord alert relay | Grafana alert with several alerts; Splunk alert from an allowed and a refused source; wrong secret refused; Discord rate limit; health before and after startup | Pending |
+| Fleet updates | apt and dnf patching; report-only reboot flags; gated reboot one host at a time with boot-ID check; Compose update and health check | Pending |
+| Monitoring exporters | node_exporter from APT and upstream binary; checksum mismatch refused; cAdvisor and WUD containers; textfile collectors; metric verification | Pending |
+| Linux access baseline | Automation account with key-only login; creation-only password; NOPASSWD drop-in; rootpw refused until root's password is proven; console recovery | Pending |
 
 No scenario passes because a command was issued. A pass requires the observed state, expected state, exit code, versions, rollback result when applicable, and a sanitized evidence note.
 
