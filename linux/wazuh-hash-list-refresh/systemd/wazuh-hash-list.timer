@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly rebuild of the Wazuh known-bad hash list
+
+[Timer]
+# CUSTOMIZE: Adjust schedule and randomized delay to suit your maintenance window.
+OnCalendar=Sun 04:30
+Persistent=true
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target

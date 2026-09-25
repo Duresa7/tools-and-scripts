@@ -1,0 +1,9 @@
+[Unit]
+Description=Rebuild the Wazuh known-bad hash list from abuse.ch
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# CUSTOMIZE: Set the path to the installed script and optional configuration file.
+ExecStart=/usr/local/sbin/wazuh-hash-list-refresh.sh --config /etc/wazuh-hash-list-refresh/config.local.conf
