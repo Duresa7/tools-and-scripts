@@ -1,0 +1,40 @@
+[Unit]
+Description=UniFi traffic flow collector for Splunk HEC
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# CUSTOMIZE: Replace these paths with the installed script and local TOML file.
+ExecStart=/usr/bin/python3 /opt/flow-collector/unifi_flow_collector.py --config /etc/flow-collector/config.local.toml --state-file /var/lib/flow-collector/checkpoint.json --send
+# CUSTOMIZE: Set the credential environment file, managed outside the repository.
+EnvironmentFile=/etc/flow-collector/credentials.env
+# CUSTOMIZE: Set an existing dedicated, unprivileged service account and group.
+User=flow-reader
+Group=flow-reader
+# CUSTOMIZE: Keep the state directory consistent with --state-file above.
+StateDirectory=flow-collector
+StateDirectoryMode=0700
+# CUSTOMIZE: Set restart delay in seconds.
+RestartSec=30
+Restart=on-failure
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=unifi-flow-collector
+
+[Install]
+WantedBy=multi-user.target

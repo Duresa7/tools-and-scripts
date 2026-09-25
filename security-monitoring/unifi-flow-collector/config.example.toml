@@ -1,0 +1,47 @@
+[unifi]
+# CUSTOMIZE: Set the console base URL without an API path.
+controller_url = "https://unifi.example.net"
+# CUSTOMIZE: Set the Network site name.
+site = "default"
+# CUSTOMIZE: Name the variable holding the API key; never paste the key here.
+api_key_env = "UNIFI_API_KEY"
+# CUSTOMIZE: For session login, clear api_key_env and set an ordinary local account.
+username = ""
+# CUSTOMIZE: For session login, name the variable holding its password.
+password_env = ""
+# CUSTOMIZE: Keep certificate verification enabled for deployment.
+verify_tls = true
+# CUSTOMIZE: Set a PEM CA path, or leave empty for the system trust store.
+ca_file = ""
+# CUSTOMIZE: Set the request timeout in seconds.
+timeout_seconds = 60
+
+[hec]
+# CUSTOMIZE: Set the complete HEC event endpoint.
+url = "https://splunk.example.net:8088/services/collector/event"
+# CUSTOMIZE: Name the variable holding the HEC token; never paste the token here.
+token_env = "SPLUNK_HEC_TOKEN"
+# CUSTOMIZE: Set an existing index, or leave empty for the token's default index.
+index = ""
+# CUSTOMIZE: Set the event sourcetype.
+sourcetype = "unifi:flow"
+# CUSTOMIZE: Set the source metadata.
+source = "unifi:traffic-flows"
+# CUSTOMIZE: Set host metadata, or leave empty to use the controller hostname.
+event_host = ""
+# CUSTOMIZE: Keep certificate verification enabled for deployment.
+verify_tls = true
+# CUSTOMIZE: Set a PEM CA path, or leave empty for the system trust store.
+ca_file = ""
+# CUSTOMIZE: Set the request timeout in seconds.
+timeout_seconds = 60
+
+[collector]
+# CUSTOMIZE: Set seconds between successful polls.
+poll_interval_seconds = 120
+# CUSTOMIZE: Set the initial history window in seconds.
+lookback_seconds = 900
+# CUSTOMIZE: Set the maximum number of flows requested per page.
+page_size = 1000
+# CUSTOMIZE: Set a checkpoint path in an existing writable directory.
+state_path = "checkpoint.json"
