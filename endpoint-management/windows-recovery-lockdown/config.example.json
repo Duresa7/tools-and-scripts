@@ -1,0 +1,22 @@
+{
+  "_comment_TaskName": "CUSTOMIZE: Choose an unused scheduled task name.",
+  "TaskName": "Windows Recovery Guard",
+  "_comment_TaskPath": "CUSTOMIZE: Choose an existing Task Scheduler folder, with leading and trailing backslashes.",
+  "TaskPath": "\\",
+  "_comment_InstallRoot": "CUSTOMIZE: Choose a new dedicated directory outside the Windows directory, under an existing trusted parent.",
+  "InstallRoot": "%ProgramData%\\WindowsRecoveryGuard",
+  "_comment_ScriptName": "CUSTOMIZE: Choose the installed script filename.",
+  "ScriptName": "recovery-lockdown.ps1",
+  "_comment_LogName": "CUSTOMIZE: Choose the log filename inside InstallRoot.",
+  "LogName": "recovery.log",
+  "_comment_DailyAt": "CUSTOMIZE: Set the daily local time in 24-hour HH:mm format.",
+  "DailyAt": "03:00",
+  "_comment_StartupDelaySeconds": "CUSTOMIZE: Set the delay after startup, from 1 to 3600 seconds.",
+  "StartupDelaySeconds": 60,
+  "_comment_VerificationTimeoutSeconds": "CUSTOMIZE: Set how long installation waits for the first task run, from 10 to 3600 seconds.",
+  "VerificationTimeoutSeconds": 120,
+  "_comment_ReagentcPath": "CUSTOMIZE: Confirm the full path to the Windows recovery utility.",
+  "ReagentcPath": "%SystemRoot%\\System32\\reagentc.exe",
+  "_comment_PowerShellPath": "CUSTOMIZE: Confirm the full path to the 64-bit Windows PowerShell executable used by the task.",
+  "PowerShellPath": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+}
