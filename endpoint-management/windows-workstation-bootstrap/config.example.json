@@ -1,0 +1,14 @@
+{
+  "_comment_ComputerName": "CUSTOMIZE: NetBIOS computer name (1 to 15 alphanumeric characters or hyphens, not all digits).",
+  "ComputerName": "WS-WORKSTATION1",
+  "_comment_AuthorizedKey": "CUSTOMIZE: Literal OpenSSH public key string (e.g. 'ssh-ed25519 AAAA... user@example.com'). Never paste a private key. Leave empty if AuthorizedKeyPath is used.",
+  "AuthorizedKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8g admin@example.com",
+  "_comment_AuthorizedKeyPath": "CUSTOMIZE: Path to a file containing an OpenSSH public key. Leave empty if AuthorizedKey is set.",
+  "AuthorizedKeyPath": "",
+  "_comment_AllowedRemoteAddresses": "CUSTOMIZE: Allowed remote IPv4/IPv6 address scope or CIDR for OpenSSH firewall rule (e.g. '192.0.2.0/24' or 'Any').",
+  "AllowedRemoteAddresses": "192.0.2.0/24",
+  "_comment_DomainDnsTestName": "CUSTOMIZE: Domain FQDN to test DNS resolution after bootstrap.",
+  "DomainDnsTestName": "ad.example.com",
+  "_comment_Restart": "CUSTOMIZE: Set to true to automatically restart after successful bootstrap.",
+  "Restart": false
+}
