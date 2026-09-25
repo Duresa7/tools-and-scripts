@@ -1,0 +1,94 @@
+---
+- name: Pull images and recreate docker compose stacks
+  hosts: "{{ target | default('docker_compose_targets') }}"
+  gather_facts: false
+  become: true
+  serial: "{{ compose_serial | default(1) }}"
+  pre_tasks:
+    - name: Require reviewed scope and explicit consent for live container changes
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in groups['docker_compose_targets']
+          - ansible_check_mode or (fleet_confirmation | default('')) == 'UPDATE FLEET'
+        fail_msg: Use --check or confirm UPDATE FLEET for the reviewed inventory.
+        quiet: true
+  tasks:
+    - name: Confirm compose projects are defined for this host
+      ansible.builtin.assert:
+        that:
+          - compose_projects is defined
+          - compose_projects | length > 0
+        fail_msg: "No compose_projects defined for {{ inventory_hostname }}."
+        quiet: true
+
+    - name: Confirm explicit project names and absolute source paths
+      ansible.builtin.assert:
+        that:
+          - item.name is string
+          - item.name | length > 0
+          - item.project_src is string
+          - item.project_src.startswith('/')
+          - "'..' not in item.project_src.split('/')"
+          - (item.pull | default(compose_pull | default('always'))) in ['always', 'missing', 'never', 'policy']
+        quiet: true
+      loop: "{{ compose_projects }}"
+      loop_control:
+        label: "{{ item.name | default('invalid project') }}"
+
+    - name: Pull images and recreate each stack
+      community.docker.docker_compose_v2:
+        project_src: "{{ item.project_src }}"
+        project_name: "{{ item.name }}"
+        files: "{{ item.files | default(omit) }}"
+        profiles: "{{ item.profiles | default(omit) }}"
+        state: present
+        pull: "{{ item.pull | default(compose_pull | default('always')) }}"
+        remove_orphans: "{{ item.remove_orphans | default(false) }}"
+        wait: true
+        wait_timeout: "{{ compose_wait_timeout | default(180) | int }}"
+      loop: "{{ compose_projects }}"
+      loop_control:
+        label: "{{ inventory_hostname }}/{{ item.name }}"
+      register: compose_updates
+      retries: "{{ compose_pull_retries | default(3) | int }}"
+      delay: "{{ compose_pull_retry_delay | default(10) | int }}"
+      until: compose_updates is succeeded
+
+    - name: Report what changed per stack
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }}/{{ item.item.name }}: changed={{ item.changed }}"
+      loop: "{{ compose_updates.results }}"
+      loop_control:
+        label: "{{ inventory_hostname }}/{{ item.item.name }}"
+
+    # The full ps --all result catches stopped services in a partially running project.
+    - name: Confirm every managed project settled cleanly
+      ansible.builtin.assert:
+        that:
+          - item.containers | length > 0
+          - non_running_names | length == 0
+          - unsettled_health_names | length == 0
+        fail_msg: >-
+          {{ inventory_hostname }}/{{ item.item.name }} did not settle:
+          non_running={{ non_running_names }},
+          health_not_ready={{ unsettled_health_names }}
+        quiet: true
+      loop: "{{ compose_updates.results }}"
+      loop_control:
+        label: "{{ inventory_hostname }}/{{ item.item.name }}"
+      vars:
+        non_running_names: >-
+          {{
+            item.containers
+            | rejectattr('State', 'equalto', 'running')
+            | map(attribute='Name')
+            | list
+          }}
+        unsettled_health_names: >-
+          {{
+            item.containers
+            | selectattr('Health', 'defined')
+            | rejectattr('Health', 'in', ['', 'healthy'])
+            | map(attribute='Name')
+            | list
+          }}

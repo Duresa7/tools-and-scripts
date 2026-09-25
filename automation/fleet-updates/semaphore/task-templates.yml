@@ -1,0 +1,34 @@
+---
+project:
+  # CUSTOMIZE: Project label in Semaphore.
+  name: Fleet Updates
+  repository:
+    # CUSTOMIZE: Existing repository label.
+    name: fleet-updates
+    # CUSTOMIZE: Local checkout on the runner.
+    path: /srv/automation/fleet-updates
+  inventory:
+    # CUSTOMIZE: Inventory label.
+    name: fleet-hosts
+    # CUSTOMIZE: Reviewed local inventory on the runner.
+    path: /srv/automation/fleet-updates/inventory/hosts.yml
+    # CUSTOMIZE: Existing Semaphore credential reference, never a secret value.
+    credential: fleet-ssh
+  environment:
+    # CUSTOMIZE: Environment label and an installed UTF-8 locale.
+    name: UTF-8
+    variables:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+views:
+  - OS Updates
+  - Docker Compose
+templates:
+  - name: OS preview
+    view: OS Updates
+    playbook: playbooks/os-update.yml
+    arguments: ["--check"]
+  - name: Compose preview
+    view: Docker Compose
+    playbook: playbooks/docker-compose-update.yml
+    arguments: ["--check"]

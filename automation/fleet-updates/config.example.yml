@@ -1,0 +1,49 @@
+---
+all:
+  vars:
+    # CUSTOMIZE: Ordinary SSH login with permission to elevate for maintenance.
+    ansible_user: operator
+    # CUSTOMIZE: Elevate package operations; read-only probes stay unprivileged.
+    os_update_become: true
+    # CUSTOMIZE: Package batch size; automatic reboot always uses one host.
+    os_update_serial: 2
+    # CUSTOMIZE: Compose host concurrency.
+    compose_serial: 1
+    # CUSTOMIZE: Keep report unless a reboot window has been approved.
+    reboot: report
+    # CUSTOMIZE: Safe apt upgrade, including automatic removal and cache cleanup.
+    apt_upgrade: safe
+    # CUSTOMIZE: Whether unused apt dependencies may be removed.
+    apt_autoremove: true
+    # CUSTOMIZE: Whether obsolete cached apt packages may be removed.
+    apt_autoclean: true
+    # CUSTOMIZE: Seconds allowed for container health checks.
+    compose_wait_timeout: 180
+  children:
+    os_update_targets:
+      hosts:
+        # CUSTOMIZE: Explicit guest allowlist; exclude hypervisors and Windows.
+        web-01.example.net:
+          # CUSTOMIZE: Documentation address; replace before use.
+          ansible_host: 192.0.2.20
+        # CUSTOMIZE: Another Linux guest, using either apt or dnf.
+        worker-01.example.net:
+          # CUSTOMIZE: Documentation address; replace before use.
+          ansible_host: 198.51.100.20
+    docker_compose_targets:
+      hosts:
+        # CUSTOMIZE: Only hosts whose projects this automation owns.
+        web-01.example.net:
+          compose_projects:
+            # CUSTOMIZE: Exact Name from docker compose ls, not the folder name.
+            - name: web
+              # CUSTOMIZE: Directory containing the deployed Compose files.
+              project_src: /srv/compose/web-app
+              # CUSTOMIZE: Ordered filenames from the deployed project.
+              files: [compose.yml]
+              # CUSTOMIZE: Deployed optional profiles; omit if none are used.
+              profiles: [frontend]
+              # CUSTOMIZE: Use never for locally built or deliberately frozen images.
+              pull: always
+              # CUSTOMIZE: Leave false to retain orphan containers.
+              remove_orphans: false

@@ -1,0 +1,232 @@
+---
+- name: Update OS packages across the Linux fleet
+  hosts: "{{ target | default('os_update_targets') }}"
+  gather_facts: true
+  become: "{{ os_update_become | default(true) }}"
+  serial: "{{ 1 if (reboot | default('report')) == 'auto' else os_update_serial | default(2) }}"
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+    NEEDRESTART_MODE: l
+  vars:
+    apt_upgrade_type: "{{ apt_upgrade | default('safe') }}"
+    reboot_policy: "{{ reboot | default('report') }}"
+  pre_tasks:
+    - name: Require reviewed scope and explicit consent for live package changes
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in groups['os_update_targets']
+          - reboot_policy in ['report', 'auto']
+          - ansible_check_mode or (fleet_confirmation | default('')) == 'UPDATE FLEET'
+          - reboot_policy != 'auto' or (ansible_connection | default('ssh')) != 'local'
+        fail_msg: Use --check or confirm UPDATE FLEET; automatic reboot requires SSH.
+        quiet: true
+
+    - name: Require single-host execution when automatic reboot is enabled
+      ansible.builtin.assert:
+        that:
+          - reboot_policy != 'auto' or (ansible_play_batch | length == 1)
+        fail_msg: Automatic reboot requires serial 1; pass reboot=auto with -e.
+        quiet: true
+  tasks:
+    - name: Confirm the local runner identity
+      when: (ansible_connection | default('ssh')) == 'local'
+      ansible.builtin.assert:
+        that:
+          - local_expected_hostname is defined
+          - ansible_facts.hostname == local_expected_hostname
+        fail_msg: Local connections require an explicit matching local_expected_hostname.
+        quiet: true
+
+    - name: Confirm a supported package manager is present
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.pkg_mgr in ['apt', 'dnf', 'dnf5']
+        fail_msg: "Unsupported package manager '{{ ansible_facts.pkg_mgr }}' on {{ inventory_hostname }}."
+        quiet: true
+
+    - name: Update apt cache and upgrade packages (Debian and Ubuntu)
+      when: ansible_facts.pkg_mgr == 'apt'
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: "{{ apt_upgrade_type }}"
+        autoremove: "{{ apt_autoremove | default(true) }}"
+        autoclean: "{{ apt_autoclean | default(true) }}"
+      register: apt_update
+
+    # This maintenance play intentionally installs the newest permitted packages.
+    - name: Upgrade all packages (Rocky and other RHEL family) # noqa: package-latest
+      when: ansible_facts.pkg_mgr in ['dnf', 'dnf5']
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      register: dnf_update
+
+    - name: Check for a pending reboot (Debian family)
+      when: ansible_facts.os_family == 'Debian'
+      become: false
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: debian_reboot_flag
+
+    # Run read-only probes in check mode too. A matching kernel alone is inconclusive.
+    - name: Check for a pending reboot (RHEL family)
+      when: ansible_facts.os_family == 'RedHat'
+      become: false
+      check_mode: false
+      changed_when: false
+      failed_when: false
+      ansible.builtin.shell: |
+        set -o pipefail
+        if command -v needs-restarting >/dev/null 2>&1; then
+          needs-restarting -r
+          probe_rc=$?
+          if [ "$probe_rc" -eq 0 ] || [ "$probe_rc" -eq 1 ]; then exit "$probe_rc"; fi
+        fi
+        if command -v dnf5 >/dev/null 2>&1; then
+          dnf5 needs-restarting --reboothint
+          probe_rc=$?
+          if [ "$probe_rc" -eq 0 ] || [ "$probe_rc" -eq 1 ]; then exit "$probe_rc"; fi
+        fi
+        if command -v dnf >/dev/null 2>&1; then
+          dnf needs-restarting -r
+          dnf_reboot_rc=$?
+          if [ "$dnf_reboot_rc" -eq 0 ] || [ "$dnf_reboot_rc" -eq 1 ]; then
+            exit "$dnf_reboot_rc"
+          fi
+        fi
+
+        if command -v rpm >/dev/null 2>&1; then
+          running_kernel="$(uname -r)";
+          latest_kernel="$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' 2>/dev/null | sort -V | tail -n 1)" || exit 255
+          if [ -z "$latest_kernel" ]; then exit 255;
+          elif [ "$running_kernel" = "$latest_kernel" ]; then exit 255;
+          else
+            printf 'running kernel %s differs from installed kernel %s\n' "$running_kernel" "$latest_kernel" >&2;
+            exit 1;
+          fi;
+        fi
+        exit 255
+      args:
+        executable: /bin/bash
+      register: rhel_reboot_check
+
+    - name: Record whether a reboot is required
+      ansible.builtin.set_fact:
+        reboot_required: >-
+          {{
+            (debian_reboot_flag.stat.exists | default(false))
+            or ((rhel_reboot_check.rc | default(0) | int) == 1)
+          }}
+        reboot_check_inconclusive: >-
+          {{
+            ansible_facts.os_family == 'RedHat'
+            and ((rhel_reboot_check.rc | default(255) | int) not in [0, 1])
+          }}
+
+    - name: Refuse an automatic reboot through a local connection
+      when:
+        - reboot_policy == 'auto'
+        - reboot_required | bool
+      ansible.builtin.assert:
+        that:
+          - (ansible_connection | default('ssh')) != 'local'
+        fail_msg: >-
+          Automatic reboot is disabled for local connections. Reconnect to
+          {{ inventory_hostname }} over SSH before using reboot=auto.
+        quiet: true
+
+    - name: Reboot the host and prove that a new boot completed
+      when:
+        - reboot_policy == 'auto'
+        - reboot_required | bool
+        - not ansible_check_mode
+      block:
+        - name: Record the current boot ID
+          become: false
+          ansible.builtin.command: cat /proc/sys/kernel/random/boot_id
+          register: boot_id_before
+          changed_when: false
+
+        - name: Schedule the reboot outside the SSH session
+          ansible.builtin.command:
+            argv:
+              - systemd-run
+              - "--unit=ansible-fleet-reboot-{{ ansible_facts.date_time.epoch }}"
+              - "--on-active=2s"
+              - "--description=Ansible fleet update reboot"
+              - /usr/bin/systemctl
+              - reboot
+          changed_when: true
+
+        # A fast reboot can evade this sample; the boot ID comparison is the proof.
+        - name: Wait for the guest to stop answering on SSH
+          become: false
+          delegate_to: localhost
+          ansible.builtin.wait_for:
+            host: "{{ ansible_host | default(inventory_hostname) }}"
+            port: "{{ ansible_port | default(22) | int }}"
+            state: stopped
+            timeout: "{{ reboot_drop_timeout | default(120) | int }}"
+          failed_when: false
+          changed_when: false
+
+        - name: Wait for SSH after the reboot
+          become: false
+          ansible.builtin.wait_for_connection:
+            delay: 5
+            timeout: "{{ reboot_timeout | default(600) | int }}"
+            connect_timeout: "{{ reboot_connect_timeout | default(10) | int }}"
+            sleep: "{{ reboot_poll_interval | default(5) | int }}"
+
+        - name: Read the boot ID after reconnect
+          become: false
+          ansible.builtin.command: cat /proc/sys/kernel/random/boot_id
+          register: boot_id_after
+          changed_when: false
+
+        - name: Confirm the guest completed a new boot
+          ansible.builtin.assert:
+            that:
+              - boot_id_after.stdout | trim != boot_id_before.stdout | trim
+            fail_msg: >-
+              {{ inventory_hostname }} accepted the reboot request but its
+              boot ID did not change.
+            quiet: true
+
+        # Query aggregate system health; do not change an individual service.
+        - name: Wait for systemd and startup health checks to settle # noqa: command-instead-of-module
+          ansible.builtin.command: systemctl is-system-running
+          register: post_reboot_system_state
+          changed_when: false
+          until: post_reboot_system_state.stdout | trim == 'running'
+          retries: "{{ reboot_system_state_retries | default(30) | int }}"
+          delay: "{{ reboot_system_state_delay | default(10) | int }}"
+
+        - name: Record the successful reboot
+          ansible.builtin.set_fact:
+            reboot_performed: true
+
+    - name: Report a pending automatic reboot in check mode
+      when:
+        - reboot_policy == 'auto'
+        - reboot_required | bool
+        - ansible_check_mode
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} would reboot in live mode."
+
+    - name: Clear the pending-reboot state after a successful reboot
+      when: reboot_performed | default(false)
+      ansible.builtin.set_fact:
+        reboot_required: false
+
+    - name: Report the per-host result
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}:
+          pkg_mgr={{ ansible_facts.pkg_mgr }}
+          changed={{ (apt_update.changed | default(false)) or (dnf_update.changed | default(false)) }}
+          reboot_required={{ reboot_required | bool }}
+          {{ 'reboot check inconclusive, verify manually'
+             if (reboot_check_inconclusive | default(false)) else '' }}
+          reboot_policy={{ reboot_policy }}
