@@ -1,0 +1,45 @@
+[splunk]
+# CUSTOMIZE: Splunk management REST endpoint URL.
+url = "https://127.0.0.1:8089"
+# CUSTOMIZE: Splunk application namespace context for search jobs.
+app = "unifi_dashboards"
+# CUSTOMIZE: Name of the environment variable holding the Splunk auth token.
+auth_token_env = "SPLUNK_TOKEN"
+# CUSTOMIZE: Optional username for basic authentication if not using a token.
+username = ""
+# CUSTOMIZE: Name of the environment variable holding the basic auth password.
+password_env = ""
+# CUSTOMIZE: Keep certificate verification enabled for production deployments.
+verify_tls = true
+# CUSTOMIZE: Path to custom CA certificate bundle in PEM format, or empty for system store.
+ca_file = ""
+# CUSTOMIZE: Request timeout in seconds for REST API queries.
+timeout_seconds = 60
+
+[dashboards]
+# CUSTOMIZE: Output directory for generated dashboard definitions and app files.
+output_dir = "dist"
+# CUSTOMIZE: Index holding UniFi traffic flow events, or empty for token default index. When set, must match the flow collector index.
+flow_index = ""
+# CUSTOMIZE: Sourcetype for UniFi flow events (matches flow collector sourcetype).
+flow_sourcetype = "unifi:flow"
+# CUSTOMIZE: Index holding UniFi syslog/CEF events.
+event_index = "netops"
+# CUSTOMIZE: Sourcetype for UniFi syslog/CEF events.
+event_sourcetype = "cef"
+# CUSTOMIZE: External base URL for alert action result links (RFC 2606 domain).
+external_url = "https://splunk.example.net"
+# CUSTOMIZE: Sources (hostnames or IP addresses) exempt from unblocked intrusion detection.
+intrusion_exempt_sources = ["proxy.example.net", "198.51.100.2"]
+# CUSTOMIZE: IPS rule category from which exempt sources are excluded.
+intrusion_exempt_rule = "Web Infrastructure Servers"
+# CUSTOMIZE: Internal network CIDR ranges for blocked-flow detection.
+internal_networks = ["192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24"]
+# CUSTOMIZE: Management network CIDR ranges permitted for admin console access.
+admin_networks = ["192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24"]
+# CUSTOMIZE: Sources exempt from scanning detection (e.g. vulnerability scanner).
+scan_exempt_sources = ["scanner.example.net"]
+# CUSTOMIZE: Zones exempt from blocked intrusion detection (e.g. DMZ or guest networks).
+intrusion_exempt_zones = ["DMZ"]
+# CUSTOMIZE: IPS rule category from which exempt zones are excluded.
+intrusion_exempt_zone_rule = "Web Infrastructure Servers"
