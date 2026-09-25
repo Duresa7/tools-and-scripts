@@ -46,6 +46,8 @@ The 2026-09-25 local run, after fifteen tools were added, completed `python chec
 
 The same limit applies. None of the new tools has run against a live system for these checks.
 
+A second run the same day, after seven more tools were added, completed `python check.py` with 49 passed check groups and 797 passed tests, with the same Windows-only test skipped. Ansible Lint passed all four Ansible projects with 0 failures, all 15 playbooks passed the syntax check, and Gitleaks again found no leaks in the complete history. The toolchain versions above are unchanged.
+
 ## Required targets
 
 Each target must be dedicated to this validation. An active workload can't be used for a destructive or failure-path test.
