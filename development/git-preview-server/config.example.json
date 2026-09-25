@@ -1,0 +1,9 @@
+{
+  "_comment": "CUSTOMIZE: Copy this file to config.local.json and review every field below.",
+  "_comment_root": "CUSTOMIZE: Set the absolute path of the git working tree's top level. Leave it empty to serve the git top level of the directory serve.mjs starts in.",
+  "root": "",
+  "_comment_host": "CUSTOMIZE: Set the IP address to listen on. Keep a loopback address; serve.mjs refuses any other address unless --allow-non-loopback is given on the command line.",
+  "host": "127.0.0.1",
+  "_comment_port": "CUSTOMIZE: Set the TCP port, or 0 for any free port.",
+  "port": 8123
+}
