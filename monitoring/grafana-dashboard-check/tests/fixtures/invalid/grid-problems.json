@@ -1,0 +1,61 @@
+{
+  "uid": "grid-problems",
+  "title": "Grid problems",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "CPU",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 4},
+      "targets": [{"refId": "A", "expr": "up"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Memory",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 6, "y": 2, "w": 12, "h": 4},
+      "targets": [{"refId": "A", "expr": "up"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Disk",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 16, "y": 8, "w": 10, "h": 4},
+      "targets": [{"refId": "A", "expr": "up"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Network",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 0, "y": 12, "w": 0, "h": 4},
+      "targets": [{"refId": "A", "expr": "up"}]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Load",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "targets": [{"refId": "A", "expr": "up"}]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Uptime",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": -1, "y": 16, "w": 4, "h": 4},
+      "targets": [{"refId": "A", "expr": "up"}]
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Swap",
+      "datasource": {"type": "prometheus", "uid": "prom-other"},
+      "gridPos": {"x": 0, "y": 20, "w": 6, "h": 4},
+      "targets": [{"refId": "A", "expr": "up"}]
+    }
+  ]
+}

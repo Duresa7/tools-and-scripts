@@ -1,0 +1,108 @@
+{
+  "uid": "fleet-overview",
+  "title": "Fleet overview",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus"
+      },
+      {
+        "name": "job",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prom-main"},
+        "query": "label_values(up, job)"
+      },
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prom-main"},
+        "query": "label_values(up{job=~\"$job\"}, instance)"
+      },
+      {
+        "name": "window",
+        "type": "interval",
+        "query": "5m,10m,1h",
+        "current": {"text": "10m", "value": "10m"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Health",
+      "collapsed": false,
+      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 1},
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Targets up",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 0, "y": 1, "w": 8, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {"type": "prometheus", "uid": "prom-main"},
+          "expr": "sum(up{job=~\"$job\", instance=~\"${instance}\"})"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Scrape duration",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 8, "y": 1, "w": 16, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (job) (rate(scrape_duration_seconds{job=~\"$job\"}[$__rate_interval]))"
+        },
+        {
+          "refId": "B",
+          "hide": true,
+          "expr": "hidden_series_that_is_never_sent"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Restarts in the last 6 hours",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 0, "y": 5, "w": 8, "h": 4},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "changes(process_start_time_seconds{job=~\"$job\"}[${__range_s}s]) > 0"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Details",
+      "collapsed": true,
+      "gridPos": {"x": 0, "y": 9, "w": 24, "h": 1},
+      "panels": [
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "Samples scraped",
+          "datasource": {"type": "prometheus", "uid": "prom-main"},
+          "gridPos": {"x": 0, "y": 1, "w": 24, "h": 8},
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (instance) (rate(scrape_samples_scraped{instance=~\"$instance\"}[$window]))"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "uid": "host-detail",
+  "title": "Host detail",
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prom-main"},
+        "query": "label_values(node_uname_info, instance)"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "gauge",
+      "title": "CPU busy",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 6},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - avg(rate(node_cpu_seconds_total{mode=\"idle\", instance=~\"$instance\"}[$__rate_interval]))"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "Memory used",
+      "datasource": {"type": "prometheus", "uid": "prom-main"},
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 6},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1 - node_memory_MemAvailable_bytes{instance=~\"$instance\"} / node_memory_MemTotal_bytes{instance=~\"$instance\"}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Disks",
+      "collapsed": true,
+      "gridPos": {"x": 0, "y": 6, "w": 24, "h": 1},
+      "panels": [
+        {
+          "id": 4,
+          "type": "bargauge",
+          "title": "Filesystem used",
+          "datasource": {"type": "prometheus", "uid": "prom-main"},
+          "gridPos": {"x": 0, "y": 0, "w": 24, "h": 6},
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "1 - node_filesystem_avail_bytes{instance=~\"$instance\"} / node_filesystem_size_bytes{instance=~\"$instance\"}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

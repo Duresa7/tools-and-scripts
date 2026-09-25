@@ -1,0 +1,38 @@
+{
+  "_comment": "CUSTOMIZE: Copy this file to config.local.json and review every field below. Relative paths start at the folder that holds the config file.",
+  "dashboards": {
+    "_comment_paths": "CUSTOMIZE: List dashboard JSON files, or directories searched recursively for *.json. Keep the allow-empty file outside these directories.",
+    "paths": [
+      "/home/example/grafana/dashboards"
+    ],
+    "_comment_datasource": "CUSTOMIZE: Keep true when every panel in a dashboard should use one datasource. Set false for dashboards that mix datasources on purpose.",
+    "require_single_datasource": true
+  },
+  "prometheus": {
+    "_comment_url": "CUSTOMIZE: Set the Prometheus base URL without /api/v1. A path prefix such as /prometheus is fine.",
+    "url": "http://127.0.0.1:9090",
+    "_comment_timeout": "CUSTOMIZE: Set the timeout for each query in seconds.",
+    "timeout_seconds": 30,
+    "_comment_ca": "CUSTOMIZE: For a private HTTPS CA, set its local PEM path. Otherwise leave this empty.",
+    "ca_file": "",
+    "_comment_bearer": "CUSTOMIZE: Set only the environment-variable name that holds a bearer token. Never put the token here.",
+    "bearer_token_env": "",
+    "_comment_basic_user": "CUSTOMIZE: Set the basic-auth username, or leave it empty when basic auth is disabled.",
+    "basic_username": "",
+    "_comment_basic_password": "CUSTOMIZE: Set only the environment-variable name that holds the basic-auth password.",
+    "basic_password_env": ""
+  },
+  "queries": {
+    "_comment_variables": "CUSTOMIZE: Map each dashboard template variable, written without $, to the value substituted before a query is sent. .* tests every series a regex matcher can select. Built-in values such as __rate_interval can be overridden here too.",
+    "variables": {
+      "instance": ".*",
+      "job": ".*"
+    },
+    "_comment_allow_empty": "CUSTOMIZE: List exact panel titles that are correct when they return no data, such as a table of recent restarts.",
+    "allow_empty_titles": [
+      "Container restarts in the last 6 hours"
+    ],
+    "_comment_allow_empty_file": "CUSTOMIZE: Optional JSON file holding a list of panel titles, such as one a dashboard generator writes. Leave empty when unused.",
+    "allow_empty_file": ""
+  }
+}
