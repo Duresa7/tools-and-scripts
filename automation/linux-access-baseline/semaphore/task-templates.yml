@@ -1,0 +1,133 @@
+---
+# CUSTOMIZE: Use reviewed paths and a stored SSH credential for an ordinary account.
+# Passwords must be injected into the configured environment-variable names or Vault.
+project:
+  # CUSTOMIZE: Display name in your scheduler.
+  name: Linux access baseline
+  repository:
+    # CUSTOMIZE: Working directory containing this project and ansible.cfg.
+    path: /srv/automation/linux-access-baseline
+  inventory:
+    # CUSTOMIZE: Ignored deployment inventory, created by configure.py.
+    path: /srv/automation/linux-access-baseline/inventory/hosts.yml
+    # CUSTOMIZE: Existing SSH credential identifier in your scheduler.
+    credential: replace-ssh-credential
+views:
+  - Automation account
+  - Account passwords
+  - Sudo policy
+templates:
+  - name: Create automation account (preview)
+    view: Automation account
+    playbook: playbooks/automation-account.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+  - name: Create automation account (apply)
+    view: Automation account
+    playbook: playbooks/automation-account.yml
+    arguments: []
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+      - name: baseline_confirmation
+        title: Type APPLY ACCESS BASELINE
+        type: ''
+        required: true
+        values: []
+  - name: Set account passwords (preview)
+    view: Account passwords
+    playbook: playbooks/account-passwords.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+  - name: Set account passwords (apply)
+    view: Account passwords
+    playbook: playbooks/account-passwords.yml
+    arguments: []
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+      - name: baseline_confirmation
+        title: Type APPLY ACCESS BASELINE
+        type: ''
+        required: true
+        values: []
+  - name: Enable root-password sudo (preview)
+    view: Sudo policy
+    playbook: playbooks/sudoers-rootpw.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+  - name: Enable root-password sudo (apply)
+    view: Sudo policy
+    playbook: playbooks/sudoers-rootpw.yml
+    arguments: []
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+      - name: baseline_confirmation
+        title: Type APPLY ACCESS BASELINE
+        type: ''
+        required: true
+        values: []
+  - name: Optional passwordless grants (preview)
+    view: Sudo policy
+    playbook: playbooks/sudoers-nopasswd.yml
+    arguments:
+      - --check
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+      - name: sudoers_nopasswd_confirmation
+        title: Type GRANT PASSWORDLESS SUDO
+        type: ''
+        required: true
+        values: []
+  - name: Optional passwordless grants (apply)
+    view: Sudo policy
+    playbook: playbooks/sudoers-nopasswd.yml
+    arguments: []
+    survey:
+      - name: target
+        title: Approved inventory host or group
+        type: ''
+        required: false
+        values: []
+      - name: baseline_confirmation
+        title: Type APPLY ACCESS BASELINE
+        type: ''
+        required: true
+        values: []
+      - name: sudoers_nopasswd_confirmation
+        title: Type GRANT PASSWORDLESS SUDO
+        type: ''
+        required: true
+        values: []

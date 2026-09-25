@@ -1,0 +1,4 @@
+---
+# CUSTOMIZE: Copy to automation-key.yml, then replace data and comment with one public key.
+# A bare type/data/comment line is required; restriction options are refused.
+automation_account_public_key: ssh-ed25519 REPLACE_WITH_PUBLIC_KEY_DATA automation@example.net

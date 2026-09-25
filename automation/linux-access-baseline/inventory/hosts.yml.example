@@ -1,0 +1,25 @@
+---
+all:
+  vars:
+    # CUSTOMIZE: Ordinary connection account with an existing NOPASSWD recovery grant.
+    ansible_user: deploy
+  children:
+    # CUSTOMIZE: Put only approved hosts needing account creation in this group.
+    automation_account_targets:
+      hosts:
+        # CUSTOMIZE: Inventory alias for an approved Linux target.
+        server-example:
+          # CUSTOMIZE: Target address; documentation address is not a live host.
+          ansible_host: 192.0.2.20
+        # CUSTOMIZE: Controller alias; remove it if the controller isn't a target.
+        controller-example:
+          # CUSTOMIZE: Local transport always requires the hostname guard below.
+          ansible_connection: local
+          # CUSTOMIZE: Exact short hostname expected from gathered controller facts.
+          baseline_controller_hostname: controller-example
+    # CUSTOMIZE: Existing accounts needing only key installation; disjoint from creation.
+    automation_account_key_only:
+      hosts: {}
+    # CUSTOMIZE: Optional operator NOPASSWD targets; must be in one of the groups above.
+    operator_nopasswd_targets:
+      hosts: {}

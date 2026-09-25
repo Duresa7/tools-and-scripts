@@ -1,0 +1,93 @@
+---
+- name: Write the NOPASSWD sudoers drop-ins
+  hosts: >-
+    {{ target | default('automation_account_targets:automation_account_key_only:operator_nopasswd_targets')
+    }}
+  gather_facts: true
+  become: true
+  become_user: root
+  serial: 1
+  strategy: linear
+  any_errors_fatal: true
+  vars_files:
+    - ../config.example.yml
+  vars: {}
+  pre_tasks:
+    - name: Check configuration and access boundaries
+      ansible.builtin.import_tasks: tasks/preflight.yml
+  tasks:
+    - name: Require separate approval for passwordless grants
+      ansible.builtin.assert:
+        that:
+          - sudoers_nopasswd_confirmation | default('') == 'GRANT PASSWORDLESS SUDO'
+        quiet: true
+        fail_msg: >-
+          This optional policy bypasses password authentication. Supply the separate GRANT PASSWORDLESS
+          SUDO confirmation even in check mode.
+    - name: Confirm the sudoers configuration parses before any change
+      ansible.builtin.command:
+        argv:
+          - visudo
+          - -c
+      register: sudoers_precheck
+      changed_when: false
+      check_mode: false
+    - name: Read the account database
+      ansible.builtin.getent:
+        database: passwd
+    - name: Grant automation-account passwordless sudo
+      when:
+        - >-
+          inventory_hostname in (groups['automation_account_targets'] + groups['automation_account_key_only'])
+        - automation_account_user in ansible_facts.getent_passwd
+      ansible.builtin.copy:
+        dest: "{{ automation_account_sudoers_dropin }}"
+        content: |
+          {{ automation_account_user }} ALL=(ALL:ALL) NOPASSWD: ALL
+        owner: root
+        group: root
+        mode: '0440'
+        validate: visudo -cf %s
+    - name: Grant operator passwordless sudo
+      when:
+        - inventory_hostname in groups['operator_nopasswd_targets']
+        - operator_user in ansible_facts.getent_passwd
+      ansible.builtin.copy:
+        dest: "{{ operator_sudoers_dropin }}"
+        content: |
+          {{ operator_user }} ALL=(ALL:ALL) NOPASSWD: ALL
+        owner: root
+        group: root
+        mode: '0440'
+        validate: visudo -cf %s
+    - name: Confirm the whole sudoers configuration still parses
+      ansible.builtin.command:
+        argv:
+          - visudo
+          - -c
+      register: sudoers_postcheck
+      changed_when: false
+      check_mode: false
+    - name: Prove each granted account resolves sudo without a password
+      when: not ansible_check_mode
+      become: true
+      become_user: "{{ item }}"
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - -n
+          - 'true'
+      loop: "{{ sudoers_expected_accounts }}"
+      vars:
+        sudoers_expected_accounts: >-
+          {{ ([automation_account_user] if (inventory_hostname in (groups['automation_account_targets']
+          + groups['automation_account_key_only']) and automation_account_user in ansible_facts.getent_passwd)
+          else []) + ([operator_user] if (inventory_hostname in groups['operator_nopasswd_targets'] and
+          operator_user in ansible_facts.getent_passwd) else []) }}
+      changed_when: false
+    - name: Report the per-host result
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: visudo={{ 'ok' if sudoers_postcheck.rc == 0 else 'FAILED' }} automation_account_grant={{
+          inventory_hostname in (groups['automation_account_targets'] + groups['automation_account_key_only'])
+          }} operator_grant={{ inventory_hostname in groups['operator_nopasswd_targets'] }}

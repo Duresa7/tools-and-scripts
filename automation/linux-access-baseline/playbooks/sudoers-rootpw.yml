@@ -1,0 +1,235 @@
+---
+- name: Make sudo authenticate against the root password
+  hosts: "{{ target | default('automation_account_targets:automation_account_key_only') }}"
+  gather_facts: true
+  become: true
+  become_user: root
+  serial: 1
+  strategy: linear
+  any_errors_fatal: true
+  vars_files:
+    - ../config.example.yml
+  vars:
+    root_password: "{{ vault_root_password | default(lookup('ansible.builtin.env', root_password_env))\
+      \ }}"
+    operator_password: >-
+      {{ vault_operator_password | default(lookup('ansible.builtin.env', operator_password_env)) }}
+  pre_tasks:
+    - name: Check configuration and access boundaries
+      ansible.builtin.import_tasks: tasks/preflight.yml
+  tasks:
+    - name: Require both credentials before touching any host
+      ansible.builtin.assert:
+        that:
+          - root_password | length > 0
+          - operator_password | length > 0
+          - root_password != operator_password
+        fail_msg: >-
+          Supply both passwords through the named environment variables or encrypted Vault variables.
+          Empty credentials are refused.
+        quiet: true
+      no_log: true
+    - name: Confirm the sudoers configuration parses before any change
+      ansible.builtin.command:
+        argv:
+          - visudo
+          - -c
+      register: sudoers_precheck
+      changed_when: false
+      check_mode: false
+    - name: Read back the root password status
+      ansible.builtin.command:
+        argv:
+          - passwd
+          - -S
+          - root
+      register: root_passwd_status
+      changed_when: false
+      check_mode: false
+    - name: Confirm root has a usable password on this host
+      ansible.builtin.assert:
+        that:
+          - root_passwd_status.stdout.split() | length > 1
+          - root_passwd_status.stdout.split()[1] is match('^P')
+        fail_msg: >-
+          {{ inventory_hostname }}: root reports {{ root_passwd_status.stdout.split()[1] | default('unreadable')
+          }} rather than a usable password. Writing Defaults rootpw here would remove sudo from every
+          account on this host, recoverable only from the out-of-band console. Run account-passwords.yml
+          against it first.
+        quiet: true
+    - name: Prove root's password authenticates before writing anything
+      when: not ansible_check_mode
+      become: true
+      become_method: ansible.builtin.su
+      become_user: root
+      vars:
+        ansible_become_password: "{{ root_password }}"
+      ansible.builtin.raw: id -un
+      register: root_auth
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Confirm root authenticated
+      when: not ansible_check_mode
+      ansible.builtin.assert:
+        that:
+          - root_auth.rc | default(1) == 0
+          - '''root'' in (root_auth.stdout_lines | default([]))'
+        fail_msg: >-
+          {{ inventory_hostname }}: su to root did not authenticate with the supplied password. A hash
+          is present but it is not this value, so pointing sudo at it would lock every account out of
+          sudo here. Run account-passwords.yml against this host first.
+        quiet: true
+    - name: Point sudo at the root password
+      ansible.builtin.copy:
+        dest: "{{ rootpw_dropin }}"
+        content: |
+          # Managed by linux-access-baseline (playbooks/sudoers-rootpw.yml).
+          # sudo asks for root's password here, not the invoking user's.
+          # Removing this line silently returns every sudo prompt on this host
+          # to the login password.
+          Defaults rootpw
+        owner: root
+        group: root
+        mode: '0440'
+        validate: visudo -cf %s
+    - name: Confirm the whole sudoers configuration still parses
+      ansible.builtin.command:
+        argv:
+          - visudo
+          - -c
+      register: sudoers_postcheck
+      changed_when: false
+      check_mode: false
+    - name: Find out whether operator still holds a NOPASSWD grant here
+      when: not ansible_check_mode
+      ansible.builtin.command:
+        argv:
+          - runuser
+          - -u
+          - "{{ operator_user }}"
+          - --
+          - sudo
+          - -k
+          - -n
+          - --
+          - 'true'
+      register: operator_nopasswd_probe
+      changed_when: false
+      failed_when: false
+    - name: Record whether operator is password-gated on this host
+      when: not ansible_check_mode
+      ansible.builtin.set_fact:
+        operator_password_gated: "{{ operator_nopasswd_probe.rc != 0 }}"
+    - name: Prove root's password is accepted at a operator sudo prompt
+      when: not ansible_check_mode
+      ansible.builtin.command:
+        argv:
+          - runuser
+          - -u
+          - "{{ operator_user }}"
+          - --
+          - sudo
+          - -S
+          - -k
+          - -p
+          - ''
+          - --
+          - id
+          - -un
+        stdin: "{{ root_password }}"
+      register: operator_sudo_rootpw
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Confirm operator reached root with root's password
+      when: not ansible_check_mode
+      ansible.builtin.assert:
+        that:
+          - operator_sudo_rootpw.rc == 0
+          - '''root'' in (operator_sudo_rootpw.stdout | default(''''))'
+        fail_msg: >-
+          {{ inventory_hostname }}: operator could not reach root by answering the sudo prompt with root's
+          password. The drop-in is written and visudo passes, so check that operator still holds administrative
+          group membership here before removing anything.
+        quiet: true
+    - name: Prove the login password is now refused at a operator sudo prompt
+      when:
+        - not ansible_check_mode
+        - operator_password_gated | bool
+      ansible.builtin.command:
+        argv:
+          - runuser
+          - -u
+          - "{{ operator_user }}"
+          - --
+          - sudo
+          - -S
+          - -k
+          - -p
+          - ''
+          - --
+          - id
+          - -un
+        stdin: "{{ operator_password }}"
+      register: operator_sudo_loginpw
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Confirm the login password no longer works at a sudo prompt
+      when:
+        - not ansible_check_mode
+        - operator_password_gated | bool
+      ansible.builtin.assert:
+        that:
+          - operator_sudo_loginpw.rc != 0
+          - '''root'' not in (operator_sudo_loginpw.stdout | default(''''))'
+        fail_msg: >-
+          {{ inventory_hostname }}: the login password still gets operator to root through sudo, so Defaults
+          rootpw is not in force here even though the file was written. Check that nothing later in /etc/sudoers.d
+          unsets it before treating this host as done.
+        quiet: true
+    - name: Read back what sudo grants operator
+      when: not ansible_check_mode
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - -l
+          - -U
+          - "{{ operator_user }}"
+      register: operator_sudo_list
+      changed_when: false
+      failed_when: false
+    - name: Confirm operator still holds a sudo grant and that rootpw is in force
+      when: not ansible_check_mode
+      ansible.builtin.assert:
+        that:
+          - operator_sudo_list.rc == 0
+          - operator_sudo_list.stdout is search('ALL')
+          - operator_sudo_list.stdout is search('rootpw')
+        fail_msg: >-
+          {{ inventory_hostname }}: sudo -l -U {{ operator_user }} did not report both a grant and rootpw
+          among the Defaults it resolved. The drop-in may be present without being in force. Read back:
+          {{ operator_sudo_list.stdout | default('nothing') }}
+        quiet: true
+    - name: Confirm the connection account still holds passwordless sudo
+      when: not ansible_check_mode
+      become: false
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - -k
+          - -n
+          - 'true'
+      changed_when: false
+    - name: Report the per-host result
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: root={{ root_passwd_status.stdout.split()[1] | default('unknown')
+          }} root_auth={{ 'ok' if (root_auth.stdout | default('') is search('root')) else 'not tested'
+          }} visudo={{ 'ok' if sudoers_postcheck.rc == 0 else 'FAILED' }} rootpw_in_force={{ 'ok' if (operator_sudo_list.stdout
+          | default('') is search('rootpw')) else 'not tested' }} rootpw_accepted={{ 'ok' if (operator_sudo_rootpw.rc
+          | default(1)) == 0 else 'not tested' }} loginpw_refused={{ 'ok' if (operator_password_gated
+          | default(false) | bool and (operator_sudo_loginpw.rc | default(0)) != 0) else ('untestable
+          - operator still NOPASSWD' if not (operator_password_gated | default(true) | bool) else 'not
+          tested') }}

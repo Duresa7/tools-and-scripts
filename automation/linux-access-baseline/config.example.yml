@@ -1,0 +1,23 @@
+---
+# CUSTOMIZE: Account created here; keep distinct from the connection and operator accounts.
+automation_account_user: automation
+# CUSTOMIZE: Home owned by the managed automation account.
+automation_account_home: /home/automation
+# CUSTOMIZE: Absolute path to the ignored public-key variables; keep the project default if suitable.
+automation_account_key_file: "{{ playbook_dir }}/../vars/automation-key.yml"
+# CUSTOMIZE: Environment-variable NAME for the optional creation-only console password.
+automation_account_password_env: BASELINE_AUTOMATION_PASSWORD
+# CUSTOMIZE: Ordinary interactive account whose password and sudo policy are managed.
+operator_user: operator
+# CUSTOMIZE: Home used only when creating the operator account.
+operator_home: /home/operator
+# CUSTOMIZE: Environment-variable NAME for the operator's login password.
+operator_password_env: BASELINE_OPERATOR_PASSWORD
+# CUSTOMIZE: Environment-variable NAME for root's password.
+root_password_env: BASELINE_ROOT_PASSWORD
+# CUSTOMIZE: Policy path; keep the 00- prefix so the default precedes grants.
+rootpw_dropin: /etc/sudoers.d/00-rootpw
+# CUSTOMIZE: Dedicated optional NOPASSWD drop-in for the managed account.
+automation_account_sudoers_dropin: /etc/sudoers.d/90-automation
+# CUSTOMIZE: Dedicated optional NOPASSWD drop-in for the operator account.
+operator_sudoers_dropin: /etc/sudoers.d/90-operator

@@ -1,0 +1,236 @@
+---
+- name: Create the automation-account account and install its key
+  hosts: "{{ target | default('automation_account_targets:automation_account_key_only') }}"
+  gather_facts: true
+  become: true
+  become_user: root
+  serial: 1
+  strategy: linear
+  any_errors_fatal: true
+  vars_files:
+    - ../config.example.yml
+  vars:
+    automation_account_password: >-
+      {{ vault_automation_account_password | default(lookup('ansible.builtin.env', automation_account_password_env))
+      }}
+  pre_tasks:
+    - name: Check configuration and access boundaries
+      ansible.builtin.import_tasks: tasks/preflight.yml
+  tasks:
+    - name: Check that the deployed key file exists
+      ansible.builtin.stat:
+        path: "{{ automation_account_key_file }}"
+      delegate_to: localhost
+      become: false
+      register: automation_account_key_file_stat
+    - name: Require the deployed key file
+      ansible.builtin.assert:
+        that:
+          - automation_account_key_file_stat.stat.exists
+          - automation_account_key_file_stat.stat.isreg
+        fail_msg: >-
+          vars/automation-key.yml is missing. Copy vars/automation-key.yml.example and put the real public
+          key in it. The repository carries only the example, because it is public and publishes no key
+          material.
+        quiet: true
+    - name: Load the public key
+      ansible.builtin.include_vars:
+        file: "{{ automation_account_key_file }}"
+    - name: Confirm the host is in exactly one automation-account group
+      ansible.builtin.assert:
+        that:
+          - >-
+            (inventory_hostname in groups['automation_account_targets']) != (inventory_hostname in groups['automation_account_key_only'])
+        fail_msg: >-
+          {{ inventory_hostname }} must be in automation_account_targets or automation_account_key_only,
+          not both and not neither.
+        quiet: true
+    - name: Normalise the public key onto one line
+      ansible.builtin.set_fact:
+        automation_account_public_key_line: "{{ automation_account_public_key | regex_replace('\\s+',\
+          \ ' ') | trim }}"
+    - name: Reject a key that carries option or restriction fields
+      ansible.builtin.assert:
+        that:
+          - automation_account_public_key_line.split() | length == 3
+          - automation_account_public_key_line.split()[0] in ['ssh-ed25519', 'ssh-rsa']
+          - '''REPLACE_WITH_PUBLIC_KEY_DATA'' not in automation_account_public_key_line'
+        fail_msg: >-
+          automation_account_public_key must be a bare `type data comment` line. This account's key carries
+          no from= or forwarding restrictions by decision, so an options prefix here is a mistake.
+        quiet: true
+    - name: Read existing automation account password status
+      ansible.builtin.getent:
+        database: shadow
+        key: "{{ automation_account_user }}"
+        fail_key: false
+      no_log: true
+    - name: Record the existing password hash for the preservation check
+      ansible.builtin.set_fact:
+        automation_account_original_hash: >-
+          {{ (ansible_facts.getent_shadow[automation_account_user] | default([], true) | first) | default('')
+          }}
+      no_log: true
+    - name: Create the automation-account account
+      when: inventory_hostname in groups['automation_account_targets']
+      ansible.builtin.user:
+        name: "{{ automation_account_user }}"
+        shell: /bin/bash
+        home: "{{ automation_account_home }}"
+        create_home: true
+        password: >-
+          {{ (automation_account_password | password_hash('sha512')) if (automation_account_password |
+          length > 0) else '!' }}
+        update_password: on_create
+        state: present
+      no_log: true
+    - name: Read back the automation account password status
+      when: not ansible_check_mode
+      ansible.builtin.getent:
+        database: shadow
+        key: "{{ automation_account_user }}"
+        fail_key: false
+      no_log: true
+    - name: Refuse any change to an existing automation password
+      when:
+        - not ansible_check_mode
+        - automation_account_original_hash | length > 0
+      ansible.builtin.assert:
+        that:
+          - >-
+            ansible_facts.getent_shadow[automation_account_user][0] == automation_account_original_hash
+        quiet: true
+        fail_msg: An existing password must never be reset or locked by this play.
+      no_log: true
+    - name: Confirm the account exists before writing its key
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ automation_account_user }}"
+      failed_when: false
+      register: automation_account_passwd
+    - name: Record whether the account exists
+      ansible.builtin.set_fact:
+        automation_account_account_present: >-
+          {{ automation_account_user in (automation_account_passwd.ansible_facts.getent_passwd | default({}))
+          }}
+    - name: Fail when the account is missing on a key-only host
+      when: inventory_hostname in groups['automation_account_key_only']
+      ansible.builtin.assert:
+        that:
+          - automation_account_account_present | bool
+        fail_msg: >-
+          {{ inventory_hostname }} is in automation_account_key_only but has no {{ automation_account_user
+          }} account. This project only writes the key file there; create the account first or move the
+          host to automation_account_targets.
+        quiet: true
+    - name: Report what check mode cannot verify
+      when:
+        - ansible_check_mode
+        - not (automation_account_account_present | bool)
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: the account does not exist yet, so the key file tasks are skipped
+          under --check. Run without --check to create the account and install the key.
+    - name: Create the .ssh directory
+      when: automation_account_account_present | bool
+      ansible.builtin.file:
+        path: "{{ automation_account_home }}/.ssh"
+        state: directory
+        owner: "{{ automation_account_user }}"
+        group: "{{ automation_account_user }}"
+        mode: '0700'
+    - name: Install exactly one unrestricted automation public key
+      when: automation_account_account_present | bool
+      ansible.builtin.copy:
+        dest: "{{ automation_account_home }}/.ssh/authorized_keys"
+        content: |
+          {{ automation_account_public_key_line }}
+        owner: "{{ automation_account_user }}"
+        group: "{{ automation_account_user }}"
+        mode: '0600'
+        validate: ssh-keygen -l -f %s
+    - name: Enforce ownership and mode on the key file
+      when: automation_account_account_present | bool
+      ansible.builtin.file:
+        path: "{{ automation_account_home }}/.ssh/authorized_keys"
+        owner: "{{ automation_account_user }}"
+        group: "{{ automation_account_user }}"
+        mode: '0600'
+    - name: Read back the installed key fingerprints
+      when: automation_account_account_present | bool
+      ansible.builtin.command:
+        argv:
+          - ssh-keygen
+          - -lf
+          - "{{ automation_account_home }}/.ssh/authorized_keys"
+      register: automation_account_key_fingerprints
+      changed_when: false
+      check_mode: false
+      failed_when: false
+    - name: Confirm the file holds exactly one key and it is the expected one
+      when:
+        - not ansible_check_mode
+        - automation_account_account_present | bool
+      ansible.builtin.assert:
+        that:
+          - automation_account_key_fingerprints.rc == 0
+          - automation_account_key_fingerprints.stdout_lines | length == 1
+          - >-
+            automation_account_public_key_line.split()[2] in automation_account_key_fingerprints.stdout
+        fail_msg: >-
+          {{ inventory_hostname }}: expected one key for {{ automation_account_public_key_line.split()[2]
+          }}, got {{ automation_account_key_fingerprints.stdout_lines | default([]) | length }} entries.
+        quiet: true
+    - name: Read the effective sshd configuration
+      ansible.builtin.command:
+        argv:
+          - sshd
+          - -T
+      register: automation_account_sshd_effective
+      changed_when: false
+      check_mode: false
+    - name: Require SSH password authentication to remain disabled
+      ansible.builtin.assert:
+        that:
+          - '''passwordauthentication no'' in automation_account_sshd_effective.stdout_lines'
+          - '''kbdinteractiveauthentication no'' in automation_account_sshd_effective.stdout_lines'
+        quiet: true
+        fail_msg: >-
+          Disable SSH password and keyboard-interactive authentication through your SSH policy before
+          using this key-only account. This play never edits sshd.
+    - name: Collect sshd account allowlists
+      ansible.builtin.set_fact:
+        automation_account_sshd_allowusers: >-
+          {{ automation_account_sshd_effective.stdout_lines | default([]) | select('match', '^allowusers
+          ') | map('regex_replace', '^allowusers ', '') | map('split') | flatten }}
+        automation_account_sshd_allowgroups: >-
+          {{ automation_account_sshd_effective.stdout_lines | default([]) | select('match', '^allowgroups
+          ') | map('regex_replace', '^allowgroups ', '') | map('split') | flatten }}
+    - name: Confirm sshd will actually admit the account
+      when:
+        - automation_account_sshd_effective.rc == 0
+        - >-
+          (automation_account_sshd_allowusers | length > 0) or (automation_account_sshd_allowgroups |
+          length > 0)
+      ansible.builtin.assert:
+        that:
+          - >-
+            (automation_account_sshd_allowusers | length == 0) or (automation_account_user in automation_account_sshd_allowusers)
+          - >-
+            (automation_account_sshd_allowgroups | length == 0) or (automation_account_user in automation_account_sshd_allowgroups)
+        fail_msg: >-
+          {{ inventory_hostname }} restricts SSH by account and does not list {{ automation_account_user
+          }}. AllowUsers={{ automation_account_sshd_allowusers | join(' ') | default('none', true) }}
+          AllowGroups={{ automation_account_sshd_allowgroups | join(' ') | default('none', true) }}. The
+          key is installed but the login will be refused. Add {{ automation_account_user }} to the allowlist,
+          validate with `sshd -t`, and reload sshd.
+        quiet: true
+    - name: Report the per-host result
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: account={{ 'present' if (automation_account_account_present | bool)
+          else 'MISSING' }} keys={{ automation_account_key_fingerprints.stdout_lines | default([]) | length
+          }} sshd_password_auth={{ (automation_account_sshd_effective.stdout_lines | default([]) | select('match',
+          '^passwordauthentication ') | list | first | default('unreadable')).split(' ') | last }} sshd_allowlist={{
+          'none' if (automation_account_sshd_allowusers | length == 0 and automation_account_sshd_allowgroups
+          | length == 0) else 'admits ' ~ automation_account_user }}

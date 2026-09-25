@@ -1,0 +1,8 @@
+config.local.yml
+inventory/hosts.yml
+vars/automation-key.yml
+vars/secrets.local.yml
+.ansible/
+__pycache__/
+.pytest_cache/
+.ruff_cache/

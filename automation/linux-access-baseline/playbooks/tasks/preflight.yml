@@ -1,0 +1,88 @@
+---
+- name: Inspect the local configuration path
+  ansible.builtin.stat:
+    path: "{{ baseline_config | default(playbook_dir ~ '/../config.local.yml') }}"
+  delegate_to: localhost
+  become: false
+  register: baseline_config_stat
+
+- name: Refuse a missing explicit configuration
+  ansible.builtin.assert:
+    that:
+      - baseline_config is not defined or baseline_config_stat.stat.exists
+      - not baseline_config_stat.stat.exists or baseline_config_stat.stat.isreg
+    quiet: true
+    fail_msg: The explicit configuration must be a regular file.
+
+- name: Load local settings over documented defaults
+  when: baseline_config_stat.stat.exists
+  ansible.builtin.include_vars:
+    file: "{{ baseline_config | default(playbook_dir ~ '/../config.local.yml') }}"
+
+- name: Require check mode or the exact apply phrase
+  ansible.builtin.assert:
+    that:
+      - ansible_check_mode or baseline_confirmation | default('') == 'APPLY ACCESS BASELINE'
+    quiet: true
+    fail_msg: Preview with --check or supply baseline_confirmation=APPLY ACCESS BASELINE.
+
+- name: Require an approved inventory group
+  ansible.builtin.assert:
+    that:
+      - >-
+        (inventory_hostname in groups.get('automation_account_targets', []))
+        != (inventory_hostname in groups.get('automation_account_key_only', []))
+    quiet: true
+    fail_msg: Each target must belong to exactly one managed account group.
+
+- name: Guard every local controller connection by hostname
+  when: (ansible_connection | default('ssh')) == 'local'
+  ansible.builtin.assert:
+    that:
+      - baseline_controller_hostname | default('') | length > 0
+      - ansible_facts.hostname == baseline_controller_hostname
+    quiet: true
+    fail_msg: The local runner hostname differs from the explicitly configured controller.
+
+- name: Read the actual connection uid without elevation
+  become: false
+  ansible.builtin.command:
+    argv: [id, -u]
+  register: baseline_connection_uid
+  changed_when: false
+  check_mode: false
+
+- name: Read the actual connection account without elevation
+  become: false
+  ansible.builtin.command:
+    argv: [id, -un]
+  register: baseline_connection_name
+  changed_when: false
+  check_mode: false
+
+- name: Keep authentication proofs on an ordinary independent connection account
+  ansible.builtin.assert:
+    that:
+      - baseline_connection_uid.stdout | trim != '0'
+      - automation_account_user is match('^[a-z_][a-z0-9_-]*[$]?$')
+      - operator_user is match('^[a-z_][a-z0-9_-]*[$]?$')
+      - automation_account_user != operator_user
+      - automation_account_user != 'root'
+      - operator_user != 'root'
+      - baseline_connection_name.stdout | trim not in [automation_account_user, operator_user]
+      - automation_account_home is match('^/home/[^/]+$')
+      - operator_home is match('^/home/[^/]+$')
+      - rootpw_dropin is match('^/etc/sudoers.d/00-[a-z0-9_-]+$')
+      - automation_account_sudoers_dropin is match('^/etc/sudoers.d/90-[a-z0-9_-]+$')
+      - operator_sudoers_dropin is match('^/etc/sudoers.d/90-[a-z0-9_-]+$')
+      - automation_account_sudoers_dropin != operator_sudoers_dropin
+    quiet: true
+    fail_msg: Use distinct ordinary accounts, dedicated homes and dedicated sudoers paths.
+
+# Cached sudo credentials must not masquerade as a surviving recovery grant.
+- name: Prove the connection account already holds passwordless sudo
+  become: false
+  ansible.builtin.command:
+    argv: [sudo, -k, -n, "true"]
+  changed_when: false
+  check_mode: false

@@ -1,0 +1,3 @@
+---
+# Built-in copy writes the complete key file and validates it with ssh-keygen.
+collections: []
