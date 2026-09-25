@@ -39,4 +39,4 @@ New-Item -ItemType SymbolicLink -Path "$HOME\.claude\skills\1password-cli" -Targ
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](../LICENSE).

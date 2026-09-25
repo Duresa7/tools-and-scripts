@@ -6,17 +6,27 @@ __pycache__/
 .coverage
 htmlcov/
 .ansible/
+**/.claude/settings.local.json
+*-workspace/
+scratchpad/
 
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
+desktop.ini
 
 channels.json
 *.sqlite
 *.sqlite3
 *.db
 *.backup
+*.env
+!*.env.example
+*.out
+*.key
+*.pem
+1password-credentials.json
 config.local.conf
 config.local.json
 config.local.toml
@@ -24,18 +34,3 @@ manifest.local.yml
 
 automation/ssh-key-rotation/identities/*.yml
 automation/ssh-key-rotation/inventory/hosts.yml
-
-# Never commit a resolved secret. These are the file names op writes to.
-*.env
-!*.env.example
-secrets.env
-*.out
-*.key
-*.pem
-1password-credentials.json
-
-# Personal agent settings and skill test output
-**/.claude/settings.local.json
-*-workspace/
-scratchpad/
-desktop.ini
