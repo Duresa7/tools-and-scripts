@@ -1,0 +1,15 @@
+services:
+  discord-alert-relay:
+    build: .
+    image: discord-alert-relay:latest
+    container_name: discord-alert-relay
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ALERT_RELAY_SECRET=${ALERT_RELAY_SECRET}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      # For webhook mode instead of bot mode, uncomment:
+      # - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    volumes:
+      - ./config.local.toml:/app/config.local.toml:ro

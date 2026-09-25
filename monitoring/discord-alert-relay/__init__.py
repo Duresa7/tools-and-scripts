@@ -1,0 +1,1 @@
+"""Discord alert relay package."""

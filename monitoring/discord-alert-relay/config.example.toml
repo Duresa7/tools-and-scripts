@@ -1,0 +1,67 @@
+# Configuration for Discord alert relay service
+
+[server]
+# CUSTOMIZE: Listen IP address for the webhook server.
+listen_address = "127.0.0.1"
+# CUSTOMIZE: Listen port for the webhook server.
+listen_port = 8080
+# CUSTOMIZE: Maximum allowed request body size in bytes.
+max_request_bytes = 1048576
+# CUSTOMIZE: Environment variable name holding the Grafana webhook bearer secret.
+secret_env = "ALERT_RELAY_SECRET"
+# CUSTOMIZE: Allowed source IP addresses or CIDR networks for POST /splunk.
+allowed_splunk_sources = [
+    "127.0.0.1",
+    "192.0.2.10",
+    "198.51.100.0/24",
+]
+
+[discord]
+# CUSTOMIZE: Delivery mode: "bot" (using bot token) or "webhook" (using incoming webhook URL).
+mode = "bot"
+# CUSTOMIZE: Environment variable name holding the Discord bot token (used when mode = "bot").
+bot_token_env = "DISCORD_BOT_TOKEN"
+# CUSTOMIZE: Target Discord channel ID for alert messages (used when mode = "bot").
+channel_id = "123456789012345678"
+# CUSTOMIZE: Environment variable name holding the Discord webhook URL (used when mode = "webhook").
+webhook_url_env = "DISCORD_WEBHOOK_URL"
+# CUSTOMIZE: Base URL for Discord REST API.
+api_base_url = "https://discord.com/api/v10"
+# CUSTOMIZE: Request timeout in seconds for Discord API calls.
+timeout_seconds = 10.0
+# CUSTOMIZE: Maximum wait time in seconds for HTTP 429 rate limit retry.
+retry_after_cap_seconds = 5.0
+# CUSTOMIZE: Interval in seconds between periodic Discord readiness checks.
+readiness_interval_seconds = 60.0
+
+[alerts]
+# CUSTOMIZE: Default alert class when an alert does not specify a class label.
+default_class = "infrastructure"
+# CUSTOMIZE: Number of alerts with identical name and status required to collapse into a condensed embed.
+condense_threshold = 4
+# CUSTOMIZE: Color for resolved alerts as hex integer.
+resolved_color = 0x2F9E44
+
+[classes.infrastructure]
+# CUSTOMIZE: Prefix prepended to the title of infrastructure alerts.
+prefix = ""
+
+[classes.security]
+# CUSTOMIZE: Prefix prepended to the title of security alerts.
+prefix = "SECURITY "
+# CUSTOMIZE: Color for security alerts as hex integer.
+color = 0x7048E8
+
+[classes.updates]
+# CUSTOMIZE: Prefix prepended to the title of update alerts.
+prefix = "UPDATES "
+# CUSTOMIZE: Color for update alerts as hex integer.
+color = 0x1C7ED6
+
+[severity_colors]
+# CUSTOMIZE: Hex color for critical severity alerts.
+critical = 0xE03131
+# CUSTOMIZE: Hex color for warning severity alerts.
+warning = 0xF08C00
+# CUSTOMIZE: Hex color for info severity alerts.
+info = 0x1971C2
