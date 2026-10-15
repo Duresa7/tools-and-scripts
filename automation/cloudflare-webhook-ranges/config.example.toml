@@ -1,0 +1,22 @@
+[github]
+# CUSTOMIZE: The document that publishes the hooks ranges.
+meta_url = "https://api.github.com/meta"
+# CUSTOMIZE: Refuse to sync when GitHub publishes fewer ranges than this.
+minimum_ranges = 3
+
+[cloudflare]
+# CUSTOMIZE: Cloudflare API base URL.
+api_url = "https://api.cloudflare.com/client/v4"
+# CUSTOMIZE: Account identifier. Leave empty when the token sees one account.
+account_id = ""
+# CUSTOMIZE: Name of the Zero Trust IP list to keep in sync.
+list_name = "GitHub Webhooks"
+# CUSTOMIZE: Request timeout in seconds.
+timeout_seconds = 20.0
+# The API token is read from the CLOUDFLARE_API_TOKEN environment variable.
+
+[metrics]
+# CUSTOMIZE: Destination .prom file for the node_exporter textfile collector.
+output_path = "/var/lib/prometheus/node-exporter/cloudflare-webhook-ranges.prom"
+# CUSTOMIZE: Prefix for the exported metrics.
+metric_prefix = "cloudflare_webhook_ranges"

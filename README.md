@@ -96,6 +96,7 @@ The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files
 - [Semaphore project reconciler](automation/semaphore-project-reconciler/README.md): plan Semaphore project objects against reviewed manifests and apply the difference only behind an explicit gate.
 - [Semaphore SQLite guard](automation/semaphore-sqlite-guard/README.md): create an online SQLite backup and compare Semaphore records without printing stored credentials.
 - [TeamSpeak channel migration](automation/teamspeak-channel-migration/README.md): export a channel tree through ClientQuery and recreate it through ServerQuery with a dry-run import path.
+- [Cloudflare webhook ranges](automation/cloudflare-webhook-ranges/README.md): keep a Zero Trust IP list equal to the webhook ranges GitHub publishes, so an Access bypass admits GitHub and nothing else, with a textfile metric for the last successful sync.
 
 ### Utilities
 
@@ -133,6 +134,7 @@ The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files
 | Semaphore project reconciler | Linux, macOS, Windows | Python 3.11+ with PyYAML | Ordinary user; scoped API token | Semaphore projects and related objects | Plan by default | Restore from a Semaphore backup | Locally checked; live matrix pending |
 | Semaphore SQLite guard | Linux, macOS, Windows | Python 3.11+ | Read access to database; write access to backup folder | Creates a backup file | Comparison is read-only | Original database is never replaced | Locally checked; live matrix pending |
 | TeamSpeak channel migration | Linux, macOS, Windows | Python 3.11+ | Query accounts only | Export writes JSON; import creates channels | Import dry run | Keep the export and remove created channels manually | Locally checked; live matrix pending |
+| Cloudflare webhook ranges | Linux, macOS, Windows; systemd example | Python 3.11+ | Ordinary user; scoped API token | Items in one Zero Trust IP list; one metrics file | Dry run | Disable the timer; re-add ranges by hand | Locally checked; live matrix pending |
 | TCP reachability check | Linux, macOS, Windows | PowerShell 7 or Windows PowerShell 5.1 | Ordinary user | No | Read-only command | Not applicable | Locally checked; live matrix pending |
 | Git preview server | Linux, macOS, Windows | Node.js 20+ | Ordinary user | No | Not applicable | Not applicable | Locally checked; live matrix pending |
 

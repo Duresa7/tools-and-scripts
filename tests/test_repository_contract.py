@@ -32,6 +32,7 @@ TOOLS = (
     ROOT / "automation" / "fleet-updates",
     ROOT / "automation" / "monitoring-exporters",
     ROOT / "automation" / "linux-access-baseline",
+    ROOT / "automation" / "cloudflare-webhook-ranges",
 )
 
 README_SECTIONS = (
@@ -82,6 +83,7 @@ LOCAL_CONFIGS = (
     "automation/linux-access-baseline/inventory/hosts.yml",
     "automation/linux-access-baseline/config.local.yml",
     "automation/linux-access-baseline/vars/automation-key.yml",
+    "automation/cloudflare-webhook-ranges/config.local.toml",
 )
 
 

@@ -95,6 +95,7 @@ Record the exact operating-system build, NetworkManager or Netplan version, Pyth
 | Fleet updates | apt and dnf patching; report-only reboot flags; gated reboot one host at a time with boot-ID check; Compose update and health check | Pending |
 | Monitoring exporters | node_exporter from APT and upstream binary; checksum mismatch refused; cAdvisor and WUD containers; textfile collectors; metric verification | Pending |
 | Linux access baseline | Automation account with key-only login; creation-only password; NOPASSWD drop-in; rootpw refused until root's password is proven; console recovery | Pending |
+| Cloudflare webhook ranges | No-change run; range added and removed; short meta document refused; read-back mismatch; token from environment only; metrics file after success and failure; systemd timer run | Pending |
 
 No scenario passes because a command was issued. A pass requires the observed state, expected state, exit code, versions, rollback result when applicable, and a sanitized evidence note.
 

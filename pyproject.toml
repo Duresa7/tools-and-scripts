@@ -29,6 +29,7 @@ testpaths = [
   "automation/fleet-updates/tests",
   "automation/monitoring-exporters/tests",
   "automation/linux-access-baseline/tests",
+  "automation/cloudflare-webhook-ranges/tests",
 ]
 
 [tool.ruff]
