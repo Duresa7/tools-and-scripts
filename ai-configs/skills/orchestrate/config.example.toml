@@ -1,0 +1,83 @@
+# Worker roster for the orchestrate skill.
+#
+# Copy this file to config.local.toml (next to SKILL.md) and edit it for the
+# machine you are on. config.local.toml is ignored by git, so accounts, home
+# directories, and quota limits never leave the machine.
+#
+# The orchestrator reads this file at the start of every run. Nothing in
+# SKILL.md names a path or an account; this file is the only place they live.
+
+[defaults]
+# Where run ledgers and worker logs go. Empty means the system temp directory
+# ($TMPDIR or /tmp on Linux and macOS, %TEMP% on Windows).
+scratch_dir = ""
+
+# Budget stops. The run ends when any one of these is reached.
+max_rounds = 6
+max_launches = 20
+wall_clock_minutes = 45
+
+# Extra tools to pre-approve on every Claude worker so a headless run does not
+# stall on a permission prompt. Use the tool-name patterns Claude Code accepts,
+# for example "mcp__<server>__*" for an MCP server, or "Bash(npm test:*)".
+allowed_tools = []
+
+# One [[account]] block per login the orchestrator may spend. Fields:
+#
+#   engine    codex | claude | antigravity   which CLI runs it
+#   name      the prefix used in worker names; defaults to the engine name.
+#             Rename to taste: name = "gemini" gives gemini-builder.
+#   id        unique within the engine; recorded in the ledger
+#   home      Codex: the CODEX_HOME directory for this login
+#   config_dir
+#             Claude: the CLAUDE_CONFIG_DIR for this login. Empty or absent
+#             means the default (~/.claude), which is usually the account the
+#             orchestrator itself is running on, so its workers share the
+#             orchestrator's quota and rate limits.
+#   models    the models this login may use, cheapest first. The orchestrator
+#             only picks a model that appears here.
+#   parallel  how many runs this login tolerates at once. Extra runs buy
+#             wall-clock speed on independent tasks, never extra quota.
+#   roles     optional. When present, this login is chosen only for these
+#             roles. Use it to keep an expensive or shared account for the
+#             work that needs it.
+
+[[account]]
+engine = "codex"
+id = "primary"
+home = "~/.codex"
+models = ["gpt-6-astra"]
+parallel = 1
+
+# Add more Codex logins as separate blocks, each with its own home. The
+# orchestrator round-robins builder tasks across them.
+# [[account]]
+# engine = "codex"
+# id = "secondary"
+# home = "~/.codex_second"
+# models = ["gpt-6-astra"]
+# parallel = 1
+
+[[account]]
+engine = "claude"
+id = "main"
+config_dir = ""
+models = ["claude-sonnet-5", "claude-opus-5-5"]
+parallel = 3
+
+# A second Claude login keeps bulk worker traffic off the orchestrator's own
+# account. If only one login has access to the top model, list it there and
+# restrict that login to the roles that need it.
+# [[account]]
+# engine = "claude"
+# id = "alt"
+# config_dir = "~/.claude_alt"
+# models = ["claude-sonnet-5", "claude-opus-5-5"]
+# parallel = 3
+
+[[account]]
+engine = "antigravity"
+name = "gemini"
+id = "default"
+models = ["gemini-3.8-flash-high", "gemini-3.1-pro-high"]
+parallel = 3
