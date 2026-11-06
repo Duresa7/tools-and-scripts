@@ -47,14 +47,14 @@ The configurator creates only `inventory/hosts.yml`, with mode `0600`. It publis
 | Exit codes | Setup/validator: 0 success, 1 failure, 2 invalid CLI; Ansible: nonzero on failure |
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/monitoring-exporters"
+TOOL_DIR="$HOME/tools-and-scripts/fleet/monitoring-exporters"
 cd "$TOOL_DIR"
 python configure.py
 ${EDITOR:-vi} inventory/hosts.yml
 python tests/validate_project.py --inventory hosts.yml
 ```
 
-Review every `CUSTOMIZE:` value before any remote command. The tool-local ignore rule covers `automation/monitoring-exporters/inventory/hosts.yml`. Shared catalog and check registration is a separate integration step.
+Review every `CUSTOMIZE:` value before any remote command. The tool-local ignore rule covers `fleet/monitoring-exporters/inventory/hosts.yml`. Shared catalog and check registration is a separate integration step.
 
 `--source PATH` selects a reviewed template; `--output PATH` selects the destination file path (its parent directory must exist). Both override the documented example and output paths.
 
@@ -163,7 +163,7 @@ cAdvisor and WUD use dedicated Compose directories. They pull missing pinned ima
 
 Textfile collectors require the upstream unit. APT installs collectors without Recommends; SMART and NVMe timers run only on APT bare-metal hosts. The packaged APT collector uses its standard textfile directory, so changing `textfile_dir` on APT is rejected. DNF gets the bundled script and a systemd timer. The systemd drop-in replaces ExecStart with the configured binary, listener, and textfile flag; retain any additional custom flags manually before adopting it.
 
-The copy under `playbooks/files/` keeps this project self-contained. `monitoring/dnf-updates` is the standalone version. Both export pending upgrades by repository, security updates, a reboot flag, and a timestamp through an atomic rename. DNF failures preserve the last good file.
+The copy under `playbooks/files/` keeps this project self-contained. `monitoring/dnf-updates-textfile` is the standalone version. Both export pending upgrades by repository, security updates, a reboot flag, and a timestamp through an atomic rename. DNF failures preserve the last good file.
 
 ## Safeguard reasoning
 

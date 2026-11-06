@@ -32,7 +32,7 @@ Tested status: Locally checked; live matrix pending. Linux controller and Linux 
 - Tested backups and console access before a live maintenance window.
 
 ```bash
-cd automation/fleet-updates
+cd fleet/fleet-updates
 ansible-galaxy collection install -r requirements.yml -p .ansible/collections
 ```
 

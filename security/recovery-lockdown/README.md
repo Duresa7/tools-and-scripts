@@ -54,7 +54,7 @@ From this tool folder, create the ignored local configuration:
 ```powershell
 .\configure.ps1
 notepad .\config.local.json
-.\recovery-lockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
+.\Invoke-RecoveryLockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
 ```
 
 The configurator writes `config.local.json` beside itself. It performs no discovery or live changes. Review every `CUSTOMIZE:` marker. Pass settings such as `-TaskName`, `-InstallRoot`, or `-DailyAt` to prefill them. `-OutputPath` selects another output file and `-ConfigPath` selects another input example. Existing output is always refused; there is no overwrite option. Rename an old configuration before generating another one.
@@ -67,15 +67,15 @@ Copy [config.example.json](config.example.json) to `config.local.json` and revie
 if (Test-Path .\config.local.json) { throw 'Local configuration already exists.' }
 Copy-Item .\config.example.json .\config.local.json
 notepad .\config.local.json
-.\recovery-lockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
+.\Invoke-RecoveryLockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
 ```
 
 After review, run the gated installation from an elevated PowerShell session:
 
 ```powershell
-.\recovery-lockdown.ps1 -Install -ConfigPath .\config.local.json `
+.\Invoke-RecoveryLockdown.ps1 -Install -ConfigPath .\config.local.json `
   -Approval INSTALL_RECOVERY_LOCKDOWN
-.\recovery-lockdown.ps1 -Check -ConfigPath .\config.local.json
+.\Invoke-RecoveryLockdown.ps1 -Check -ConfigPath .\config.local.json
 ```
 
 Use the same configuration and parameter overrides for subsequent checks and uninstall. Installation saves the effective settings, including overrides, into its protected `config.local.json`. You can pass that installed file to later commands.
@@ -89,7 +89,7 @@ Parameters override the explicitly selected JSON configuration. That file overri
 | `TaskName` | `Windows Recovery Guard` | Unused task name |
 | `TaskPath` | `\` | Existing Task Scheduler folder, with leading and trailing backslashes |
 | `InstallRoot` | `%ProgramData%\WindowsRecoveryGuard` | New dedicated installation directory |
-| `ScriptName` | `recovery-lockdown.ps1` | Installed script filename inside that directory |
+| `ScriptName` | `Invoke-RecoveryLockdown.ps1` | Installed script filename inside that directory |
 | `LogName` | `recovery.log` | Append-only operational log filename inside that directory |
 | `DailyAt` | `03:00` | Daily local time, `HH:mm` |
 | `StartupDelaySeconds` | `60` | Boot delay, 1 to 3600 seconds |
@@ -110,14 +110,14 @@ The installation directory, script, and installed configuration are owned by Adm
 ## Dry run
 
 ```powershell
-.\recovery-lockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
-.\recovery-lockdown.ps1 -Uninstall -ConfigPath .\config.local.json -WhatIf
+.\Invoke-RecoveryLockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
+.\Invoke-RecoveryLockdown.ps1 -Uninstall -ConfigPath .\config.local.json -WhatIf
 ```
 
 `-WhatIf` validates input and reports the selected operation and destination. It does not call Windows APIs, write a log, create files, or verify live readiness. It can run without elevation and on the local test host. Live checks require Windows and elevation:
 
 ```powershell
-.\recovery-lockdown.ps1 -Check -ConfigPath .\config.local.json
+.\Invoke-RecoveryLockdown.ps1 -Check -ConfigPath .\config.local.json
 ```
 
 Check verifies installed file permissions, the installed configuration, task identity and schedule, WinRE status, the policy provider marker, and the effective authentication requirement. It makes no changes. A passing check describes current state; it does not prove a future feature update or recovery-menu session will behave correctly.
@@ -143,8 +143,8 @@ Task deletion requires the expected description, SYSTEM principal, executable, a
 Uninstall disables the matching task, stops it, waits for it to stop, removes it, and verifies removal:
 
 ```powershell
-.\recovery-lockdown.ps1 -Uninstall -ConfigPath .\config.local.json -WhatIf
-.\recovery-lockdown.ps1 -Uninstall -ConfigPath .\config.local.json `
+.\Invoke-RecoveryLockdown.ps1 -Uninstall -ConfigPath .\config.local.json -WhatIf
+.\Invoke-RecoveryLockdown.ps1 -Uninstall -ConfigPath .\config.local.json `
   -Approval UNINSTALL_RECOVERY_LOCKDOWN
 ```
 
@@ -178,9 +178,9 @@ This tool does not record prior policy values or automatically restore them. To 
 Run local checks from the repository root:
 
 ```powershell
-python -m pytest -q windows/recovery-lockdown/tests
-python -m ruff check windows/recovery-lockdown
-python -m ruff format --check windows/recovery-lockdown
+python -m pytest -q security/recovery-lockdown/tests
+python -m ruff check security/recovery-lockdown
+python -m ruff format --check security/recovery-lockdown
 ```
 
 The tests invoke `pwsh -NoProfile -NonInteractive`. Missing PowerShell is a failure, not a skipped test. Live validation must still cover startup, daily runs, policy readback, a standard-user recovery session, and deliberate repair rollback on a disposable Windows target.

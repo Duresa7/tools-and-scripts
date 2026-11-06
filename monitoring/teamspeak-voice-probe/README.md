@@ -75,7 +75,7 @@ TOOL_DIR="$HOME/tools-and-scripts/monitoring/teamspeak-voice-probe"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
-python "$TOOL_DIR/teamspeak_probe.py" --config "$CONFIG_PATH" check
+python "$TOOL_DIR/teamspeak_voice_probe.py" --config "$CONFIG_PATH" check
 ```
 
 PowerShell:
@@ -85,7 +85,7 @@ $ToolDir = Join-Path $HOME 'tools-and-scripts/monitoring/teamspeak-voice-probe'
 $ConfigPath = Join-Path $ToolDir 'config.local.toml'
 Copy-Item (Join-Path $ToolDir 'config.example.toml') $ConfigPath
 notepad $ConfigPath
-py (Join-Path $ToolDir 'teamspeak_probe.py') --config $ConfigPath check
+py (Join-Path $ToolDir 'teamspeak_voice_probe.py') --config $ConfigPath check
 ```
 
 Replace every `CUSTOMIZE:` value in `config.local.toml`.
@@ -102,7 +102,7 @@ CLI flags (`--local-host`, `--timeout`, `--dns-server`, `--output`) override TOM
 Ad-hoc voice checks can run without a configuration file:
 
 ```bash
-python "$TOOL_DIR/teamspeak_probe.py" check --public voice1.example.com --local 9987
+python "$TOOL_DIR/teamspeak_voice_probe.py" check --public voice1.example.com --local 9987
 ```
 
 Passwords are read strictly from the environment variable named in `query_password_env`. Never store passwords in the TOML file or command arguments.
@@ -112,7 +112,7 @@ Bash:
 ```bash
 read -r -s -p 'ServerQuery password: ' TS_QUERY_PASSWORD
 export TS_QUERY_PASSWORD
-python "$TOOL_DIR/teamspeak_probe.py" --config "$CONFIG_PATH" metrics --stdout
+python "$TOOL_DIR/teamspeak_voice_probe.py" --config "$CONFIG_PATH" metrics --stdout
 unset TS_QUERY_PASSWORD
 ```
 
@@ -120,7 +120,7 @@ PowerShell:
 
 ```powershell
 $env:TS_QUERY_PASSWORD = Read-Host 'ServerQuery password' -MaskInput
-py (Join-Path $ToolDir 'teamspeak_probe.py') --config $ConfigPath metrics --stdout
+py (Join-Path $ToolDir 'teamspeak_voice_probe.py') --config $ConfigPath metrics --stdout
 Remove-Item Env:TS_QUERY_PASSWORD
 ```
 
@@ -136,7 +136,7 @@ After=network.target
 [Service]
 Type=oneshot
 User=node_exporter
-ExecStart=/usr/bin/python3 /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/teamspeak_probe.py --config /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/config.local.toml metrics
+ExecStart=/usr/bin/python3 /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/teamspeak_voice_probe.py --config /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/config.local.toml metrics
 ```
 
 Timer file `/etc/systemd/system/teamspeak-probe.timer`:
@@ -157,7 +157,7 @@ WantedBy=timers.target
 Periodic collection with cron:
 
 ```cron
-* * * * * node_exporter /usr/bin/python3 /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/teamspeak_probe.py --config /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/config.local.toml metrics >/dev/null 2>&1
+* * * * * node_exporter /usr/bin/python3 /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/teamspeak_voice_probe.py --config /opt/tools-and-scripts/monitoring/teamspeak-voice-probe/config.local.toml metrics >/dev/null 2>&1
 ```
 
 ## Permissions
@@ -169,13 +169,13 @@ Run as an ordinary user, such as `node_exporter` or an unprivileged automation a
 Probing is non-destructive. To verify configuration and endpoint connectivity without writing files, run `check`:
 
 ```bash
-python "$TOOL_DIR/teamspeak_probe.py" --config "$CONFIG_PATH" check
+python "$TOOL_DIR/teamspeak_voice_probe.py" --config "$CONFIG_PATH" check
 ```
 
 To preview rendered Prometheus metrics on standard output without writing to disk:
 
 ```bash
-python "$TOOL_DIR/teamspeak_probe.py" --config "$CONFIG_PATH" metrics --stdout
+python "$TOOL_DIR/teamspeak_voice_probe.py" --config "$CONFIG_PATH" metrics --stdout
 ```
 
 ## Changes made

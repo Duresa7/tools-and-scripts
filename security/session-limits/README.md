@@ -50,7 +50,7 @@ From this tool folder, create your local configuration:
 ```powershell
 .\configure.ps1
 notepad .\config.local.json
-.\session-limits.ps1 -Mode Install -ConfigPath .\config.local.json
+.\Invoke-SessionLimits.ps1 -Mode Install -ConfigPath .\config.local.json
 ```
 
 The configurator copies annotated example values into ignored `config.local.json`. Review every `CUSTOMIZE:` marker. It makes no directory query and refuses to overwrite any existing output. Use `-OutputPath` for a different file; its parent must exist. Policy parameters accepted by the main script also work on the configurator.
@@ -96,9 +96,9 @@ Elevate only the PowerShell session used to apply installation, removal, or a ma
 ## Dry run
 
 ```powershell
-.\session-limits.ps1 -Mode Install -ConfigPath .\config.local.json
-.\session-limits.ps1 -Mode Uninstall -ConfigPath .\config.local.json -Apply -WhatIf
-.\session-limits.ps1 -Mode Tick -ConfigPath .\config.local.json
+.\Invoke-SessionLimits.ps1 -Mode Install -ConfigPath .\config.local.json
+.\Invoke-SessionLimits.ps1 -Mode Uninstall -ConfigPath .\config.local.json -Apply -WhatIf
+.\Invoke-SessionLimits.ps1 -Mode Tick -ConfigPath .\config.local.json
 ```
 
 Preview validates and prints the effective policy and intended operation. It doesn't query sessions, contact the directory, validate Windows integration, write usage, send messages, or sign anyone out. Pure functions can be dot-sourced for saved-input tests without running the main block.
@@ -108,11 +108,11 @@ Preview validates and prints the effective policy and intended operation. It doe
 After reviewing the preview, run installation from an elevated PowerShell session:
 
 ```powershell
-.\session-limits.ps1 -Mode Install -ConfigPath .\config.local.json -Apply
-.\session-limits.ps1 -Mode Status -ConfigPath .\config.local.json
+.\Invoke-SessionLimits.ps1 -Mode Install -ConfigPath .\config.local.json -Apply
+.\Invoke-SessionLimits.ps1 -Mode Status -ConfigPath .\config.local.json
 ```
 
-Installation refuses an existing task or state folder. It copies `session-limits.ps1` and an effective `config.local.json`, verifies the script hash, and registers a SYSTEM task with one-minute repetition, a five-minute execution limit, and IgnoreNew concurrency. It verifies the registered action, principal, and repetition. Registration uses no execution-policy bypass; local signing policy still applies.
+Installation refuses an existing task or state folder. It copies `Invoke-SessionLimits.ps1` and an effective `config.local.json`, verifies the script hash, and registers a SYSTEM task with one-minute repetition, a five-minute execution limit, and IgnoreNew concurrency. It verifies the registered action, principal, and repetition. Registration uses no execution-policy bypass; local signing policy still applies.
 
 Ticks keep one `<SID>.json` usage file per account, `enforcement.log`, and `tick.lock` in the state folder. State replacement is atomic; a file lock serializes manual and scheduled ticks. Usage is saved before warning or sign-out. The log contains timestamps, account SIDs, usage, and reasons. It has no automatic retention policy; arrange retention outside this tool.
 
@@ -131,9 +131,9 @@ WTS enumeration avoids localized console-output parsing and treats an idle endpo
 From an elevated session, preview and remove the task:
 
 ```powershell
-.\session-limits.ps1 -Mode Uninstall -ConfigPath .\config.local.json
-.\session-limits.ps1 -Mode Uninstall -ConfigPath .\config.local.json -Apply
-.\session-limits.ps1 -Mode Status -ConfigPath .\config.local.json
+.\Invoke-SessionLimits.ps1 -Mode Uninstall -ConfigPath .\config.local.json
+.\Invoke-SessionLimits.ps1 -Mode Uninstall -ConfigPath .\config.local.json -Apply
+.\Invoke-SessionLimits.ps1 -Mode Status -ConfigPath .\config.local.json
 ```
 
 Removal disables, stops, unregisters, and verifies absence of the matching task. It keeps the installed script, config, log, lock file, and usage files. After confirming the task is absent, archive or delete that exact state folder manually. Directory policies remain untouched. Sign-out cannot restore unsaved work.

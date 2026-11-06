@@ -16,7 +16,7 @@ from typing import Any
 
 import configure
 import pytest
-from alert_relay import (
+from discord_alert_relay import (
     DEFAULT_RESOLVED_COLOR,
     DiscordClient,
     DiscordRelayServer,
@@ -33,7 +33,7 @@ from alert_relay import (
     title_and_color,
 )
 
-RELAY_SCRIPT = Path(__file__).resolve().parents[1] / "alert_relay.py"
+RELAY_SCRIPT = Path(__file__).resolve().parents[1] / "discord_alert_relay.py"
 CONFIGURE_SCRIPT = Path(__file__).resolve().parents[1] / "configure.py"
 
 

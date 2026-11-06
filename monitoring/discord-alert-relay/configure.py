@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from alert_relay import (
+from discord_alert_relay import (
     DEFAULT_API_BASE_URL,
     DEFAULT_BOT_TOKEN_ENV,
     DEFAULT_CONDENSE_THRESHOLD,

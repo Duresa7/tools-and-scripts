@@ -55,9 +55,9 @@ TOOL_DIR="$HOME/tools-and-scripts/monitoring/grafana-dashboard-check"
 CONFIG_PATH="$TOOL_DIR/config.local.json"
 cp -n "$TOOL_DIR/config.example.json" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
-python "$TOOL_DIR/grafana_dashboards.py" layout --config "$CONFIG_PATH"
-python "$TOOL_DIR/grafana_dashboards.py" queries --config "$CONFIG_PATH" --dry-run
-python "$TOOL_DIR/grafana_dashboards.py" queries --config "$CONFIG_PATH"
+python "$TOOL_DIR/grafana_dashboard_check.py" layout --config "$CONFIG_PATH"
+python "$TOOL_DIR/grafana_dashboard_check.py" queries --config "$CONFIG_PATH" --dry-run
+python "$TOOL_DIR/grafana_dashboard_check.py" queries --config "$CONFIG_PATH"
 ```
 
 PowerShell:
@@ -68,9 +68,9 @@ $ConfigPath = Join-Path $ToolDir 'config.local.json'
 if (Test-Path $ConfigPath) { throw 'Local config already exists' }
 Copy-Item (Join-Path $ToolDir 'config.example.json') $ConfigPath
 notepad $ConfigPath
-py (Join-Path $ToolDir 'grafana_dashboards.py') layout --config $ConfigPath
-py (Join-Path $ToolDir 'grafana_dashboards.py') queries --config $ConfigPath --dry-run
-py (Join-Path $ToolDir 'grafana_dashboards.py') queries --config $ConfigPath
+py (Join-Path $ToolDir 'grafana_dashboard_check.py') layout --config $ConfigPath
+py (Join-Path $ToolDir 'grafana_dashboard_check.py') queries --config $ConfigPath --dry-run
+py (Join-Path $ToolDir 'grafana_dashboard_check.py') queries --config $ConfigPath
 ```
 
 Replace every `CUSTOMIZE:` value before querying. Keep config and allow-empty JSON files outside dashboard directories: directory inputs recursively include every `*.json` file.
@@ -100,7 +100,7 @@ Credential fields hold environment-variable names, never tokens or passwords. Se
 ```bash
 read -r -s -p 'Prometheus token: ' PROMETHEUS_TOKEN
 export PROMETHEUS_TOKEN
-python "$TOOL_DIR/grafana_dashboards.py" queries --config "$CONFIG_PATH"
+python "$TOOL_DIR/grafana_dashboard_check.py" queries --config "$CONFIG_PATH"
 unset PROMETHEUS_TOKEN
 ```
 
@@ -115,13 +115,13 @@ No elevation is required. The checks need read access to dashboards, config, and
 `layout` is always offline. Preview the interpolated queries without contacting Prometheus or reading credentials:
 
 ```bash
-python "$TOOL_DIR/grafana_dashboards.py" queries --config "$CONFIG_PATH" --dry-run
+python "$TOOL_DIR/grafana_dashboard_check.py" queries --config "$CONFIG_PATH" --dry-run
 ```
 
 The preview prints expressions and allowed-empty markers. It cannot prove that a query parses in Prometheus or returns data. To check the included layout fixtures:
 
 ```bash
-python "$TOOL_DIR/grafana_dashboards.py" layout "$TOOL_DIR/tests/fixtures/valid"
+python "$TOOL_DIR/grafana_dashboard_check.py" layout "$TOOL_DIR/tests/fixtures/valid"
 ```
 
 ## Changes made

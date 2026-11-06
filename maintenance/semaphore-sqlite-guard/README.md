@@ -38,14 +38,14 @@ The configurator checks `SEMAPHORE_DB_PATH`, `/var/lib/semaphore/database.sqlite
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/semaphore-sqlite-guard"
+TOOL_DIR="$HOME/tools-and-scripts/maintenance/semaphore-sqlite-guard"
 python "$TOOL_DIR/configure.py" --database /var/lib/semaphore/database.sqlite
 ```
 
 PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/automation/semaphore-sqlite-guard'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/maintenance/semaphore-sqlite-guard'
 $DatabasePath = 'C:\ProgramData\Semaphore\database.sqlite'
 py (Join-Path $ToolDir 'configure.py') --database $DatabasePath
 ```
@@ -57,7 +57,7 @@ The configurator writes ignored `config.local.toml` and refuses to replace an ex
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/semaphore-sqlite-guard"
+TOOL_DIR="$HOME/tools-and-scripts/maintenance/semaphore-sqlite-guard"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
@@ -82,15 +82,15 @@ Explicit paths keep the original interface and override local config:
 ```bash
 DATABASE_PATH="/var/lib/semaphore/database.sqlite"
 BACKUP_PATH="$HOME/semaphore-backups/pre-upgrade.sqlite"
-python "$TOOL_DIR/semaphore_sqlite.py" backup "$DATABASE_PATH" "$BACKUP_PATH"
-python "$TOOL_DIR/semaphore_sqlite.py" compare "$DATABASE_PATH" "$BACKUP_PATH"
+python "$TOOL_DIR/semaphore_sqlite_guard.py" backup "$DATABASE_PATH" "$BACKUP_PATH"
+python "$TOOL_DIR/semaphore_sqlite_guard.py" compare "$DATABASE_PATH" "$BACKUP_PATH"
 ```
 
 With config, omit the source and generated destination:
 
 ```bash
-python "$TOOL_DIR/semaphore_sqlite.py" --config "$CONFIG_PATH" backup
-python "$TOOL_DIR/semaphore_sqlite.py" --config "$CONFIG_PATH" compare "$BACKUP_PATH"
+python "$TOOL_DIR/semaphore_sqlite_guard.py" --config "$CONFIG_PATH" backup
+python "$TOOL_DIR/semaphore_sqlite_guard.py" --config "$CONFIG_PATH" compare "$BACKUP_PATH"
 ```
 
 Use `--require-secret-records` or `--allow-empty-secret-records` to override the comparison policy.
@@ -106,7 +106,7 @@ POSIX backups receive mode `0600`. Windows backups have inherited access removed
 `backup --dry-run` checks source integrity, calculates the UTC timestamped destination, and rejects an existing destination without creating a file:
 
 ```bash
-python "$TOOL_DIR/semaphore_sqlite.py" --config "$CONFIG_PATH" backup --dry-run
+python "$TOOL_DIR/semaphore_sqlite_guard.py" --config "$CONFIG_PATH" backup --dry-run
 ```
 
 `compare` is read-only and can be run before maintenance to confirm a backup is readable.

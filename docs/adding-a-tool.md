@@ -1,4 +1,4 @@
-# Future tool template
+# Adding a tool
 
 Use this checklist when adding a tool. A reader should be able to download one folder, understand its risks, create local configuration, and run its tests without copying code from another category.
 
@@ -7,13 +7,45 @@ Use this checklist when adding a tool. A reader should be able to download one f
 ```text
 category/tool-name/
 ├── README.md
-├── tool entry point
-├── configure entry point
+├── tool.toml
+├── <entry point named after the folder>
+├── configure.<ext>
 ├── config.example.<native-format>
 └── tests/
 ```
 
+Pick the category by the job the tool does, not the platform it runs on:
+
+| Category | Put a tool here when it |
+|---|---|
+| `monitoring/` | checks health, probes a service, collects metrics or logs, or routes alerts |
+| `fleet/` | is an Ansible project that changes many hosts from one controller |
+| `security/` | enforces access policy, locks a system down, or keeps an allowlist or blocklist current |
+| `maintenance/` | makes a one-off change, migration, backup, or upkeep task on one system |
+| `utilities/` | fits none of the above |
+
+The README's status table records the platform, so don't split a category by operating system.
+
+Name the entry point after the folder: `tool_name.py` (snake case) for Python, `tool-name.sh`, `tool-name.mjs`, or `tool-name.bat` for Bash, Node, and batch. PowerShell entry points use an approved Verb-Noun name instead, such as `Test-InstallerSignature.ps1`; a tool with several scripts gives each its own verb. Helper files keep role names: `configure.*`, `lib/`, `systemd/`, `playbooks/`.
+
 Keep shared code inside the tool folder. If two tools need the same code, either accept the duplication or create a separately documented package with its own version and tests.
+
+## Tool manifest
+
+`tool.toml` tells the repository checks what to run. `check.py` and the repository tests find every tool through it, so you never add a new tool's path to a shared list.
+
+```toml
+# Commands check.py runs to confirm the scripts start. Python and Node run
+# directly; Bash runs inside the Linux checks. PowerShell is parsed, not run.
+help = [
+  ["tool_name.py", "--help"],
+  ["configure.py", "--help"],
+]
+# Files the user creates locally. The tests confirm git ignores each one.
+local_files = ["config.local.toml"]
+# Set to false only when the tool has no inputs to configure.
+configurator = true
+```
 
 ## README sections
 
@@ -32,7 +64,7 @@ Use this linked order:
 11. Troubleshooting
 12. Exit behavior
 
-State the supported platform, minimum runtime, required privilege, files or services changed, preview path, rollback boundary, and tested status. Don't claim operating-system compatibility until the result is recorded in `COMPATIBILITY.md`.
+State the supported platform, minimum runtime, required privilege, files or services changed, preview path, rollback boundary, and tested status. Don't claim operating-system compatibility until the result is recorded in [compatibility.md](compatibility.md).
 
 ## Configuration
 
@@ -64,6 +96,6 @@ Comment user inputs and non-obvious safety decisions. Don't narrate assignments,
 
 ## Tests
 
-Keep tool tests under `tool-name/tests/`. Cover config precedence, configurator output, non-overwrite behavior, credential exclusion, CLI help, failure cleanup, dry-run gates, and the state-changing boundary. Add repository-level tests only for rules shared by every tool.
+Keep tool tests under `tool-name/tests/`. Cover config precedence, configurator output, non-overwrite behavior, credential exclusion, CLI help, failure cleanup, dry-run gates, and the state-changing boundary. Add repository-level tests only for rules shared by every tool, and reach a tool through `tool_catalog.tool("tool-name")` rather than a fixed path.
 
 Run `python check.py` from the repository root before a checkpoint commit. A missing checker is a failed local verification, not a skipped test.

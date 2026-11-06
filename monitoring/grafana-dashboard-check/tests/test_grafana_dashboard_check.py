@@ -13,7 +13,7 @@ import pytest
 TOOL = Path(__file__).resolve().parents[1]
 FIXTURES = TOOL / "tests" / "fixtures"
 SPEC = importlib.util.spec_from_file_location(
-    "grafana_dashboard_check", TOOL / "grafana_dashboards.py"
+    "grafana_dashboard_check", TOOL / "grafana_dashboard_check.py"
 )
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -21,7 +21,7 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 
-def cli(*args, script="grafana_dashboards.py"):
+def cli(*args, script="grafana_dashboard_check.py"):
     return subprocess.run(
         [sys.executable, str(TOOL / script), *map(str, args)],
         check=False,
@@ -435,9 +435,9 @@ def test_missing_allow_empty_file_fails_before_request(prometheus, dashboard, tm
 @pytest.mark.parametrize(
     "script,args,fragment",
     [
-        ("grafana_dashboards.py", [], "layout"),
-        ("grafana_dashboards.py", ["layout"], "--allow-mixed-datasources"),
-        ("grafana_dashboards.py", ["queries"], "--bearer-token-env"),
+        ("grafana_dashboard_check.py", [], "layout"),
+        ("grafana_dashboard_check.py", ["layout"], "--allow-mixed-datasources"),
+        ("grafana_dashboard_check.py", ["queries"], "--bearer-token-env"),
         ("configure.py", [], "--dashboard"),
     ],
 )

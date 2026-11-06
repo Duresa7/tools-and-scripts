@@ -6,10 +6,10 @@ project:
   name: Linux access baseline
   repository:
     # CUSTOMIZE: Working directory containing this project and ansible.cfg.
-    path: /srv/automation/linux-access-baseline
+    path: /srv/fleet/linux-access-baseline
   inventory:
     # CUSTOMIZE: Ignored deployment inventory, created by configure.py.
-    path: /srv/automation/linux-access-baseline/inventory/hosts.yml
+    path: /srv/fleet/linux-access-baseline/inventory/hosts.yml
     # CUSTOMIZE: Existing SSH credential identifier in your scheduler.
     credential: replace-ssh-credential
 views:

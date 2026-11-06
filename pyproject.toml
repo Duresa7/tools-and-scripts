@@ -1,36 +1,8 @@
 [tool.pytest.ini_options]
 addopts = "-ra"
-testpaths = [
-  "tests",
-  "linux/networkmanager-cutover/tests",
-  "monitoring/prometheus-target-check/tests",
-  "automation/semaphore-sqlite-guard/tests",
-  "automation/teamspeak-channel-migration/tests",
-  "automation/ssh-key-rotation/tests",
-  "linux/proxmox-subscription-notice/tests",
-  "linux/compose-service-update/tests",
-  "monitoring/dnf-updates/tests",
-  "monitoring/cloudflared-tunnel-health/tests",
-  "monitoring/teamspeak-voice-probe/tests",
-  "monitoring/minecraft-status-probe/tests",
-  "monitoring/grafana-dashboard-check/tests",
-  "utilities/tcp-reachability-check/tests",
-  "automation/semaphore-project-reconciler/tests",
-  "monitoring/unifi-flow-collector/tests",
-  "windows/online-logon-policy/tests",
-  "windows/workstation-bootstrap/tests",
-  "windows/recovery-lockdown/tests",
-  "windows/session-limits/tests",
-  "utilities/git-preview-server/tests",
-  "linux/wazuh-hash-list-refresh/tests",
-  "windows/installer-signature-check/tests",
-  "monitoring/unifi-flow-dashboards/tests",
-  "monitoring/discord-alert-relay/tests",
-  "automation/fleet-updates/tests",
-  "automation/monitoring-exporters/tests",
-  "automation/linux-access-baseline/tests",
-  "automation/cloudflare-webhook-ranges/tests",
-]
+pythonpath = ["."]
+# Repository tests, then every tool's own tests (category/tool/tests).
+testpaths = ["tests", "*/*/tests"]
 
 [tool.ruff]
 line-length = 88

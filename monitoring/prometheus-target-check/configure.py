@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 
-from check_targets import (
+from prometheus_target_check import (
     DEFAULT_TIMEOUT,
     DEFAULT_URL,
     HttpSettings,

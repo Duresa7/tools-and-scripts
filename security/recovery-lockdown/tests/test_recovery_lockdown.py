@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 TOOL = Path(__file__).resolve().parents[1]
-SCRIPT = TOOL / "recovery-lockdown.ps1"
+SCRIPT = TOOL / "Invoke-RecoveryLockdown.ps1"
 
 
 def pwsh() -> str:
@@ -203,7 +203,7 @@ def test_task_arguments_preserve_paths_with_spaces(tmp_path: Path) -> None:
         f"$s=Get-RecoveryDefaults; $s.InstallRoot={quote(root)}; "
         "Get-RecoveryTaskArguments $s"
     )
-    assert f'-File "{root / "recovery-lockdown.ps1"}"' in output
+    assert f'-File "{root / "Invoke-RecoveryLockdown.ps1"}"' in output
     assert f'-ConfigPath "{root / "config.local.json"}"' in output
     assert "-Enforce" in output
     assert "-Approval ENFORCE_RECOVERY_LOCKDOWN" in output
@@ -494,7 +494,9 @@ if (-not $script:started) {{ throw 'First run was not requested' }}
 """
     )
     assert (destination / "config.local.json").is_file()
-    assert (destination / "recovery-lockdown.ps1").read_bytes() == SCRIPT.read_bytes()
+    assert (
+        destination / "Invoke-RecoveryLockdown.ps1"
+    ).read_bytes() == SCRIPT.read_bytes()
     settings = json.loads((destination / "config.local.json").read_text("utf-8-sig"))
     assert settings["DailyAt"] == "04:15"
     assert settings["StartupDelaySeconds"] == 90
@@ -507,7 +509,7 @@ if (-not $script:started) {{ throw 'First run was not requested' }}
         assert "Task and files retained" in result.stdout
 
 
-@pytest.mark.parametrize("filename", ["recovery-lockdown.ps1", "configure.ps1"])
+@pytest.mark.parametrize("filename", ["Invoke-RecoveryLockdown.ps1", "configure.ps1"])
 def test_help_and_powershell_parser(filename: str) -> None:
     result = run(
         f"$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::"

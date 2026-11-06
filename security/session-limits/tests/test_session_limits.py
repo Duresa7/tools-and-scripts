@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 TOOL = Path(__file__).resolve().parents[1]
-ENTRY = TOOL / "session-limits.ps1"
+ENTRY = TOOL / "Invoke-SessionLimits.ps1"
 PWSH = shutil.which("pwsh") or str(Path.home() / ".local/bin/pwsh")
 
 
@@ -219,7 +219,7 @@ def test_invalid_configuration(override):
     assert result.returncode != 0
 
 
-@pytest.mark.parametrize("script", ["configure.ps1", "session-limits.ps1"])
+@pytest.mark.parametrize("script", ["configure.ps1", "Invoke-SessionLimits.ps1"])
 def test_help_and_dot_source_are_inert(script):
     result = run_ps(f"& {quote(TOOL / script)} -Help")
     assert "-" in result.stdout

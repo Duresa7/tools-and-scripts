@@ -339,7 +339,7 @@ Set-Alias -Name Test-InstallerSignature -Value Invoke-InstallerSignatureCheck
 if ($MyInvocation.InvocationName -ne '.') {
     $ErrorActionPreference = 'Stop'
     if ($Help) {
-        Write-Output 'installer-signature-check.ps1 [-ConfigPath PATH] [-InstallerPath PATH] [-ExpectedPublisher NAME] [-ExpectedSHA256 HASH] [-ExpectedComputer NAME] [-Format Table|Json] [-AsJson] [-Help]'
+        Write-Output 'Test-InstallerSignature.ps1 [-ConfigPath PATH] [-InstallerPath PATH] [-ExpectedPublisher NAME] [-ExpectedSHA256 HASH] [-ExpectedComputer NAME] [-Format Table|Json] [-AsJson] [-Help]'
         exit 0
     }
 

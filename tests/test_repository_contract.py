@@ -1,39 +1,12 @@
 import subprocess
 from pathlib import Path
 
+import tool_catalog
+
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_CONFIGS = ROOT / "ai-configs"
 
-TOOLS = (
-    ROOT / "linux" / "networkmanager-cutover",
-    ROOT / "monitoring" / "prometheus-target-check",
-    ROOT / "automation" / "semaphore-sqlite-guard",
-    ROOT / "automation" / "teamspeak-channel-migration",
-    ROOT / "automation" / "ssh-key-rotation",
-    ROOT / "linux" / "proxmox-subscription-notice",
-    ROOT / "linux" / "compose-service-update",
-    ROOT / "monitoring" / "dnf-updates",
-    ROOT / "monitoring" / "cloudflared-tunnel-health",
-    ROOT / "monitoring" / "teamspeak-voice-probe",
-    ROOT / "monitoring" / "minecraft-status-probe",
-    ROOT / "monitoring" / "grafana-dashboard-check",
-    ROOT / "utilities" / "tcp-reachability-check",
-    ROOT / "automation" / "semaphore-project-reconciler",
-    ROOT / "monitoring" / "unifi-flow-collector",
-    ROOT / "windows" / "online-logon-policy",
-    ROOT / "windows" / "workstation-bootstrap",
-    ROOT / "windows" / "recovery-lockdown",
-    ROOT / "windows" / "session-limits",
-    ROOT / "utilities" / "git-preview-server",
-    ROOT / "linux" / "wazuh-hash-list-refresh",
-    ROOT / "windows" / "installer-signature-check",
-    ROOT / "monitoring" / "unifi-flow-dashboards",
-    ROOT / "monitoring" / "discord-alert-relay",
-    ROOT / "automation" / "fleet-updates",
-    ROOT / "automation" / "monitoring-exporters",
-    ROOT / "automation" / "linux-access-baseline",
-    ROOT / "automation" / "cloudflare-webhook-ranges",
-)
+TOOLS = tool_catalog.tools(ROOT)
 
 README_SECTIONS = (
     "Use case",
@@ -51,39 +24,8 @@ README_SECTIONS = (
 )
 
 LOCAL_CONFIGS = (
-    "linux/networkmanager-cutover/config.local.conf",
-    "monitoring/prometheus-target-check/config.local.json",
-    "automation/semaphore-sqlite-guard/config.local.toml",
-    "automation/teamspeak-channel-migration/config.local.toml",
-    "automation/ssh-key-rotation/inventory/hosts.yml",
-    "automation/ssh-key-rotation/identities/workstation-key.yml",
-    "linux/proxmox-subscription-notice/config.local.conf",
-    "linux/compose-service-update/config.local.conf",
-    "monitoring/dnf-updates/config.local.conf",
-    "monitoring/cloudflared-tunnel-health/config.local.toml",
-    "monitoring/teamspeak-voice-probe/config.local.toml",
-    "monitoring/minecraft-status-probe/config.local.toml",
-    "monitoring/grafana-dashboard-check/config.local.json",
-    "utilities/tcp-reachability-check/config.local.json",
-    "automation/semaphore-project-reconciler/config.local.toml",
-    "monitoring/unifi-flow-collector/config.local.toml",
-    "windows/online-logon-policy/config.local.json",
-    "windows/workstation-bootstrap/config.local.json",
-    "windows/recovery-lockdown/config.local.json",
-    "windows/session-limits/config.local.json",
-    "utilities/git-preview-server/config.local.json",
-    "automation/semaphore-project-reconciler/manifest.local.yml",
-    "linux/wazuh-hash-list-refresh/config.local.conf",
-    "windows/installer-signature-check/config.local.json",
-    "monitoring/unifi-flow-dashboards/config.local.toml",
-    "monitoring/discord-alert-relay/config.local.toml",
-    "automation/fleet-updates/inventory/hosts.yml",
-    "automation/fleet-updates/config.local.yml",
-    "automation/monitoring-exporters/inventory/hosts.yml",
-    "automation/linux-access-baseline/inventory/hosts.yml",
-    "automation/linux-access-baseline/config.local.yml",
-    "automation/linux-access-baseline/vars/automation-key.yml",
-    "automation/cloudflare-webhook-ranges/config.local.toml",
+    *(f"{tool.relative}/{name}" for tool in TOOLS for name in tool.local_files),
+    "ai-configs/skills/orchestrate/config.local.toml",
 )
 
 
@@ -104,25 +46,55 @@ def tracked_files() -> list[Path]:
 def test_every_tool_folder_is_self_contained() -> None:
     missing: list[str] = []
     for tool in TOOLS:
-        if not (tool / "README.md").is_file():
-            missing.append(f"{tool.relative_to(ROOT)}: README.md")
-        if not (tool / "tests").is_dir():
-            missing.append(f"{tool.relative_to(ROOT)}: tests/")
-        if not any(path.name.startswith("configure.") for path in tool.iterdir()):
-            missing.append(f"{tool.relative_to(ROOT)}: configurator")
+        if not (tool.path / "README.md").is_file():
+            missing.append(f"{tool.relative}: README.md")
+        if not (tool.path / "tests").is_dir():
+            missing.append(f"{tool.relative}: tests/")
+        has_configurator = any(
+            path.name.startswith("configure.") for path in tool.path.iterdir()
+        )
+        if has_configurator != tool.has_configurator:
+            missing.append(f"{tool.relative}: configurator")
     assert missing == []
+
+
+def test_every_tool_folder_has_a_manifest() -> None:
+    folders = sorted(
+        f"{category}/{folder.name}"
+        for category in tool_catalog.CATEGORIES
+        for folder in (ROOT / category).iterdir()
+        if folder.is_dir() and not folder.name.startswith((".", "_"))
+    )
+    assert folders == sorted(tool.relative for tool in TOOLS)
+
+
+def test_only_category_folders_hold_tools() -> None:
+    stray = sorted(
+        path.parent.relative_to(ROOT).as_posix()
+        for path in ROOT.glob("*/*/tool.toml")
+        if path.parent.parent.name not in tool_catalog.CATEGORIES
+    )
+    assert stray == []
+
+
+def test_readme_catalog_links_every_tool() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    unlisted = [
+        tool.relative for tool in TOOLS if f"]({tool.relative}/README.md)" not in readme
+    ]
+    assert unlisted == []
 
 
 def test_every_tool_readme_uses_the_same_navigation() -> None:
     missing: list[str] = []
     for tool in TOOLS:
-        text = (tool / "README.md").read_text(encoding="utf-8")
+        text = (tool.path / "README.md").read_text(encoding="utf-8")
         for section in README_SECTIONS:
             if f"## {section}" not in text:
-                missing.append(f"{tool.relative_to(ROOT)}: {section}")
+                missing.append(f"{tool.relative}: {section}")
             link = section.lower().replace(" ", "-")
             if f"](#{link})" not in text:
-                missing.append(f"{tool.relative_to(ROOT)}: link {link}")
+                missing.append(f"{tool.relative}: link {link}")
     assert missing == []
 
 

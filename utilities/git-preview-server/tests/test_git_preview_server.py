@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 TOOL = Path(__file__).resolve().parents[1]
-SERVE = TOOL / "serve.mjs"
+SERVE = TOOL / "git-preview-server.mjs"
 CONFIGURE = TOOL / "configure.mjs"
 NODE_INSTALL = (
     "Install Node.js 20 or newer from https://nodejs.org/ and add node to PATH."

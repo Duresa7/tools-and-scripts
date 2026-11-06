@@ -27,7 +27,7 @@ if ($MyInvocation.InvocationName -ne '.') {
                 $overrides[$key] = $PSBoundParameters[$key]
             }
         }
-        . (Join-Path $PSScriptRoot 'installer-signature-check.ps1')
+        . (Join-Path $PSScriptRoot 'Test-InstallerSignature.ps1')
         $example = Join-Path $PSScriptRoot 'config.example.json'
         if (-not (Test-Path -LiteralPath $example -PathType Leaf)) {
             throw "Example configuration file not found at '$example'."

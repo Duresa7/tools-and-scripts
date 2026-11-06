@@ -480,7 +480,7 @@ if ($MyInvocation.InvocationName -ne '.') {
     $ErrorActionPreference = 'Stop'
     try {
         if ($Help) {
-            Write-Output 'bootstrap-workstation.ps1 [-ConfigPath PATH] [-ComputerName NAME] [-AuthorizedKey KEY] [-AuthorizedKeyPath PATH] [-AllowedRemoteAddresses SCOPE] [-DomainDnsTestName NAME] [-Restart] [-ConfirmationPhrase PHRASE] [-WhatIf]'
+            Write-Output 'Initialize-Workstation.ps1 [-ConfigPath PATH] [-ComputerName NAME] [-AuthorizedKey KEY] [-AuthorizedKeyPath PATH] [-AllowedRemoteAddresses SCOPE] [-DomainDnsTestName NAME] [-Restart] [-ConfirmationPhrase PHRASE] [-WhatIf]'
             Write-Output "Renames workstation and configures key-only OpenSSH server. Requires exact confirmation phrase 'BOOTSTRAP AND REBOOT' or -WhatIf."
             exit 0
         }

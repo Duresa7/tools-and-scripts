@@ -38,14 +38,14 @@ The configurator writes ignored `config.local.toml` and refuses to replace it. W
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/teamspeak-channel-migration"
+TOOL_DIR="$HOME/tools-and-scripts/maintenance/teamspeak-channel-migration"
 python "$TOOL_DIR/configure.py"
 ```
 
 PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME 'tools-and-scripts/automation/teamspeak-channel-migration'
+$ToolDir = Join-Path $HOME 'tools-and-scripts/maintenance/teamspeak-channel-migration'
 py (Join-Path $ToolDir 'configure.py')
 ```
 
@@ -62,7 +62,7 @@ The discovery session authenticates, lists handlers, selects one tab, and reads 
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/teamspeak-channel-migration"
+TOOL_DIR="$HOME/tools-and-scripts/maintenance/teamspeak-channel-migration"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
@@ -89,7 +89,7 @@ Credentials never appear in TOML or command arguments. Bash:
 ```bash
 read -r -s -p 'ClientQuery API key: ' TS3_CLIENTQUERY_API_KEY
 export TS3_CLIENTQUERY_API_KEY
-python "$TOOL_DIR/teamspeak_channels.py" --config "$CONFIG_PATH" export
+python "$TOOL_DIR/teamspeak_channel_migration.py" --config "$CONFIG_PATH" export
 unset TS3_CLIENTQUERY_API_KEY
 ```
 
@@ -97,7 +97,7 @@ PowerShell:
 
 ```powershell
 $env:TS3_CLIENTQUERY_API_KEY = Read-Host 'ClientQuery API key' -MaskInput
-py (Join-Path $ToolDir 'teamspeak_channels.py') --config $ConfigPath export
+py (Join-Path $ToolDir 'teamspeak_channel_migration.py') --config $ConfigPath export
 Remove-Item Env:TS3_CLIENTQUERY_API_KEY
 ```
 
@@ -110,7 +110,7 @@ Run as an ordinary user. ClientQuery and ServerQuery permissions determine what 
 Dry run reads the export, validates every channel ID and parent reference, orders parents before children, and prints planned creation without contacting the target:
 
 ```bash
-python "$TOOL_DIR/teamspeak_channels.py" --config "$CONFIG_PATH" import --dry-run
+python "$TOOL_DIR/teamspeak_channel_migration.py" --config "$CONFIG_PATH" import --dry-run
 ```
 
 `--skip-existing` needs a live target query, so it can't be combined with dry run.
@@ -124,7 +124,7 @@ Live import example:
 ```bash
 read -r -s -p 'ServerQuery password: ' TS3_SERVERQUERY_PASSWORD
 export TS3_SERVERQUERY_PASSWORD
-python "$TOOL_DIR/teamspeak_channels.py" --config "$CONFIG_PATH" import --skip-existing
+python "$TOOL_DIR/teamspeak_channel_migration.py" --config "$CONFIG_PATH" import --skip-existing
 unset TS3_SERVERQUERY_PASSWORD
 ```
 

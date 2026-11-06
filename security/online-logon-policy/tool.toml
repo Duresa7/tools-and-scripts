@@ -1,0 +1,6 @@
+# Tool manifest, read by tool_catalog.py at the repository root.
+# check.py runs each help command; the repository tests confirm
+# git ignores each local file.
+
+help = []  # PowerShell scripts are parsed, not run, by check.py
+local_files = ["config.local.json"]

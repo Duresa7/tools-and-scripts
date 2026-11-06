@@ -32,5 +32,5 @@ config.local.json
 config.local.toml
 manifest.local.yml
 
-automation/ssh-key-rotation/identities/*.yml
-automation/ssh-key-rotation/inventory/hosts.yml
+fleet/ssh-key-rotation/identities/*.yml
+fleet/ssh-key-rotation/inventory/hosts.yml

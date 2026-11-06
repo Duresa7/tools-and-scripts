@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "teamspeak_probe.py"
-SPEC = importlib.util.spec_from_file_location("teamspeak_probe", MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().parents[1] / "teamspeak_voice_probe.py"
+SPEC = importlib.util.spec_from_file_location("teamspeak_voice_probe", MODULE_PATH)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE

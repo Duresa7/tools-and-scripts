@@ -19,7 +19,7 @@ if ($MyInvocation.InvocationName -ne '.') {
     try {
         if ($Help) { Write-Output 'configure.ps1 [-OutputPath PATH] [-TargetGroup NAME] [-WindowStart HH:mm] [-WindowEnd HH:mm] [-DailyBudgetMinutes N] [-WarningMinutes N,N] [-StatePath PATH] [-TaskName NAME] [-WhatIf]. Refuses to overwrite.'; exit 0 }
         $overrides = @{} + $PSBoundParameters
-        . (Join-Path $PSScriptRoot 'session-limits.ps1')
+        . (Join-Path $PSScriptRoot 'Invoke-SessionLimits.ps1')
         $example = Join-Path $PSScriptRoot 'config.example.json'
         $resolved = Resolve-Configuration $example $overrides
         $payload = Get-Content -LiteralPath $example -Raw | ConvertFrom-Json

@@ -47,15 +47,17 @@ python check.py
 
 ## Tool catalog
 
-Tools are grouped into five folders:
+Each tool sits in one folder, chosen by the job it does:
 
 | Folder | What's in it |
 |---|---|
-| `monitoring/` | Health checks, probes, and metrics or log collectors |
-| `windows/` | Windows workstation and domain tools |
-| `linux/` | Linux server, container, and hypervisor tools |
-| `automation/` | Ansible, Semaphore, backup, and migration tools |
-| `utilities/` | Small cross-platform helpers |
+| `monitoring/` | Health checks, probes, metrics and log collectors, and alert routing |
+| `fleet/` | Ansible projects that change many hosts from one controller |
+| `security/` | Access policy, lockdown, and allowlist or blocklist upkeep |
+| `maintenance/` | One-off changes, migrations, backups, and upkeep for a single system |
+| `utilities/` | Small helpers that fit none of the above |
+
+The platform each tool runs on is listed in [Status and safety](#status-and-safety). Each tool's main script is named after its folder, for example `prometheus_target_check.py` in `prometheus-target-check/`. PowerShell scripts use Verb-Noun names instead, for example `Test-InstallerSignature.ps1`.
 
 The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files for AI coding agents. It isn't a tool folder, so the tool rules and checks below don't apply to it.
 
@@ -63,45 +65,45 @@ The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files
 
 - [Prometheus target check](monitoring/prometheus-target-check/README.md): compare the active-target API with an expected set and reject missing, duplicate, unexpected, forbidden, or unhealthy targets.
 - [Grafana dashboard check](monitoring/grafana-dashboard-check/README.md): find overlapping or out-of-grid panels offline, then run every visible PromQL expression and reject errors and unexpected empty results.
-- [DNF updates textfile](monitoring/dnf-updates/README.md): export pending DNF updates by repository, pending security updates, and the reboot-required flag for the node_exporter textfile collector.
+- [TCP reachability check](monitoring/tcp-reachability-check/README.md): probe a declared list of TCP endpoints from one host and fail when any target doesn't connect.
+- [DNF updates textfile](monitoring/dnf-updates-textfile/README.md): export pending DNF updates by repository, pending security updates, and the reboot-required flag for the node_exporter textfile collector.
 - [Cloudflared tunnel health](monitoring/cloudflared-tunnel-health/README.md): export the tunnel connection count and local origin HTTP health for the node_exporter textfile collector, keeping a stopped connector distinct from an unreachable metrics endpoint.
 - [TeamSpeak voice probe](monitoring/teamspeak-voice-probe/README.md): send a real TeamSpeak 3 Init1 handshake to local and public voice endpoints and tell a server fault from a relay or DNS fault.
 - [Minecraft status probe](monitoring/minecraft-status-probe/README.md): query a Java Edition server with the Server List Ping protocol and report version, players, and latency.
+- [UniFi flow collector](monitoring/unifi-flow-collector/README.md): poll UniFi traffic flows, map them to CIM field names, and preview or send them to Splunk HEC with a checkpoint.
 - [UniFi flow dashboards](monitoring/unifi-flow-dashboards/README.md): generate Splunk Dashboard Studio views for the UniFi flow collector's events and verify every panel query read-only against Splunk.
 - [Discord alert relay](monitoring/discord-alert-relay/README.md): receive Grafana and Splunk alert webhooks and post them to a Discord channel as color-coded embeds.
-- [UniFi flow collector](monitoring/unifi-flow-collector/README.md): poll UniFi traffic flows, map them to CIM field names, and preview or send them to Splunk HEC with a checkpoint.
 
-### Windows
+### Fleet
 
-- [Windows online logon policy](windows/online-logon-policy/README.md): create a gated workstation GPO that requires online domain-password sign-in, then check the applied result on each workstation.
-- [Windows workstation bootstrap](windows/workstation-bootstrap/README.md): rename a fresh Windows workstation and set up a key-only OpenSSH server behind a confirmation phrase.
-- [Windows recovery lockdown](windows/recovery-lockdown/README.md): keep the Windows Recovery Environment disabled through a SYSTEM scheduled task so a standard user can't reset the machine from the recovery menu.
-- [Windows session limits](windows/session-limits/README.md): enforce a daily sign-in window and usage budget for members of a directory group and sign them off when either runs out.
-- [Installer signature check](windows/installer-signature-check/README.md): confirm a downloaded installer's Authenticode signature, exact publisher, and SHA-256 before anyone runs it.
-- [Volume control panel](windows/volume-control-panel/volume-cp-open.bat): a batch file that opens the Windows sound control panel, handy for a mouse or keyboard shortcut.
+- [Fleet updates](fleet/fleet-updates/README.md): patch Linux hosts through apt or dnf and update listed Compose projects, with report-only reboots by default and a gated, one-host-at-a-time reboot path.
+- [Monitoring exporters](fleet/monitoring-exporters/README.md): install and verify node_exporter, cAdvisor, textfile collectors, and What's Up Docker with pinned, checksum-verified versions.
+- [Linux access baseline](fleet/linux-access-baseline/README.md): create an automation account, manage account passwords, and roll out sudo policy with visudo validation and a root-password proof before `Defaults rootpw`.
+- [SSH key rotation](fleet/ssh-key-rotation/README.md): audit, stage, verify, and retire public keys across POSIX and Windows targets with an allowlist and a gated retirement step.
 
-### Linux
+### Security
 
-- [NetworkManager cutover](linux/networkmanager-cutover/README.md): move a Linux interface to a prepared NetworkManager profile, verify its exact address, route, and DNS state, and restore the prior network configuration after a failed cutover.
-- [Proxmox subscription notice](linux/proxmox-subscription-notice/README.md): check, suppress, or restore the web UI subscription notice with an exact-count layout guard.
-- [Wazuh hash list refresh](linux/wazuh-hash-list-refresh/README.md): rebuild the Wazuh manager's known-bad hash list from the MalwareBazaar recent feed, refuse an empty list, and swap it in atomically.
-- [Compose service update](linux/compose-service-update/README.md): pull and recreate one Compose service from the files its running container was started with, refusing any file outside an allowed root.
+- [Windows online logon policy](security/online-logon-policy/README.md): create a gated workstation GPO that requires online domain-password sign-in, then check the applied result on each workstation.
+- [Windows recovery lockdown](security/recovery-lockdown/README.md): keep the Windows Recovery Environment disabled through a SYSTEM scheduled task so a standard user can't reset the machine from the recovery menu.
+- [Windows session limits](security/session-limits/README.md): enforce a daily sign-in window and usage budget for members of a directory group and sign them off when either runs out.
+- [Installer signature check](security/installer-signature-check/README.md): confirm a downloaded installer's Authenticode signature, exact publisher, and SHA-256 before anyone runs it.
+- [Wazuh hash list refresh](security/wazuh-hash-list-refresh/README.md): rebuild the Wazuh manager's known-bad hash list from the MalwareBazaar recent feed, refuse an empty list, and swap it in atomically.
+- [Cloudflare webhook ranges](security/cloudflare-webhook-ranges/README.md): keep a Zero Trust IP list equal to the webhook ranges GitHub publishes, so an Access bypass admits GitHub and nothing else, with a textfile metric for the last successful sync.
 
-### Automation
+### Maintenance
 
-- [Fleet updates](automation/fleet-updates/README.md): patch Linux hosts through apt or dnf and update listed Compose projects, with report-only reboots by default and a gated, one-host-at-a-time reboot path.
-- [Monitoring exporters](automation/monitoring-exporters/README.md): install and verify node_exporter, cAdvisor, textfile collectors, and What's Up Docker with pinned, checksum-verified versions.
-- [Linux access baseline](automation/linux-access-baseline/README.md): create an automation account, manage account passwords, and roll out sudo policy with visudo validation and a root-password proof before `Defaults rootpw`.
-- [SSH key rotation](automation/ssh-key-rotation/README.md): audit, stage, verify, and retire public keys across POSIX and Windows targets with an allowlist and a gated retirement step.
-- [Semaphore project reconciler](automation/semaphore-project-reconciler/README.md): plan Semaphore project objects against reviewed manifests and apply the difference only behind an explicit gate.
-- [Semaphore SQLite guard](automation/semaphore-sqlite-guard/README.md): create an online SQLite backup and compare Semaphore records without printing stored credentials.
-- [TeamSpeak channel migration](automation/teamspeak-channel-migration/README.md): export a channel tree through ClientQuery and recreate it through ServerQuery with a dry-run import path.
-- [Cloudflare webhook ranges](automation/cloudflare-webhook-ranges/README.md): keep a Zero Trust IP list equal to the webhook ranges GitHub publishes, so an Access bypass admits GitHub and nothing else, with a textfile metric for the last successful sync.
+- [NetworkManager cutover](maintenance/networkmanager-cutover/README.md): move a Linux interface to a prepared NetworkManager profile, verify its exact address, route, and DNS state, and restore the prior network configuration after a failed cutover.
+- [Proxmox subscription notice](maintenance/proxmox-subscription-notice/README.md): check, suppress, or restore the web UI subscription notice with an exact-count layout guard.
+- [Compose service update](maintenance/compose-service-update/README.md): pull and recreate one Compose service from the files its running container was started with, refusing any file outside an allowed root.
+- [Windows workstation bootstrap](maintenance/workstation-bootstrap/README.md): rename a fresh Windows workstation and set up a key-only OpenSSH server behind a confirmation phrase.
+- [Semaphore SQLite guard](maintenance/semaphore-sqlite-guard/README.md): create an online SQLite backup and compare Semaphore records without printing stored credentials.
+- [Semaphore project reconciler](maintenance/semaphore-project-reconciler/README.md): plan Semaphore project objects against reviewed manifests and apply the difference only behind an explicit gate.
+- [TeamSpeak channel migration](maintenance/teamspeak-channel-migration/README.md): export a channel tree through ClientQuery and recreate it through ServerQuery with a dry-run import path.
 
 ### Utilities
 
-- [TCP reachability check](utilities/tcp-reachability-check/README.md): probe a declared list of TCP endpoints from one host and fail when any target doesn't connect.
 - [Git preview server](utilities/git-preview-server/README.md): serve only the tracked files of a git working tree on loopback for local HTML and SVG previews.
+- [Volume control panel](utilities/volume-control-panel/README.md): a batch file that opens the Windows sound control panel, handy for a mouse or keyboard shortcut.
 
 ## Status and safety
 
@@ -137,12 +139,13 @@ The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files
 | Cloudflare webhook ranges | Linux, macOS, Windows; systemd example | Python 3.11+ | Ordinary user; scoped API token | Items in one Zero Trust IP list; one metrics file | Dry run | Disable the timer; re-add ranges by hand | Locally checked; live matrix pending |
 | TCP reachability check | Linux, macOS, Windows | PowerShell 7 or Windows PowerShell 5.1 | Ordinary user | No | Read-only command | Not applicable | Locally checked; live matrix pending |
 | Git preview server | Linux, macOS, Windows | Node.js 20+ | Ordinary user | No | Not applicable | Not applicable | Locally checked; live matrix pending |
+| Volume control panel | Windows 10 and 11 | Windows command processor | Ordinary user | No | Not applicable | Not applicable | Static content test only; live matrix pending |
 
 Every state-changing tool documents the exact confirmation, backup, and rollback behavior in its own README. Don't test network cutovers, key retirement, channel creation, sign-in policy, session sign-out, or recovery lockdown against an active system that can't tolerate interruption.
 
 ## Compatibility
 
-[Compatibility validation](COMPATIBILITY.md) separates completed local checks from the pending Debian 13, Ubuntu 24.04, Rocky 10, Windows 11, and Windows Server 2025 live matrix. No live compatibility claim is complete until every required scenario has a sanitized passing record.
+[Compatibility validation](docs/compatibility.md) separates completed local checks from the pending Debian 13, Ubuntu 24.04, Rocky 10, Windows 11, and Windows Server 2025 live matrix. No live compatibility claim is complete until every required scenario has a sanitized passing record.
 
 ## Configuration rules
 
@@ -167,7 +170,7 @@ The command doesn't skip a missing checker. It fails with the required installat
 
 ## Adding a tool
 
-[Future tool template](TOOL-TEMPLATE.md) defines the folder layout, required README sections, configuration rules, safety metadata, comment policy, and minimum tests.
+[Adding a tool](docs/adding-a-tool.md) defines the folder layout, naming, `tool.toml` manifest, required README sections, configuration rules, safety metadata, comment policy, and minimum tests.
 
 ## License
 

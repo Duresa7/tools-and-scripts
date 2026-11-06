@@ -57,7 +57,7 @@ TOOL_DIR="$HOME/tools-and-scripts/monitoring/prometheus-target-check"
 CONFIG_PATH="$TOOL_DIR/config.local.json"
 cp "$TOOL_DIR/config.example.json" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
-python "$TOOL_DIR/check_targets.py" --config "$CONFIG_PATH"
+python "$TOOL_DIR/prometheus_target_check.py" --config "$CONFIG_PATH"
 ```
 
 PowerShell:
@@ -67,7 +67,7 @@ $ToolDir = Join-Path $HOME 'tools-and-scripts/monitoring/prometheus-target-check
 $ConfigPath = Join-Path $ToolDir 'config.local.json'
 Copy-Item (Join-Path $ToolDir 'config.example.json') $ConfigPath
 notepad $ConfigPath
-py (Join-Path $ToolDir 'check_targets.py') --config $ConfigPath
+py (Join-Path $ToolDir 'prometheus_target_check.py') --config $ConfigPath
 ```
 
 Replace every `CUSTOMIZE:` value. `expectations.targets` must list each `(job, scrape_url)` pair exactly once.
@@ -83,13 +83,13 @@ Bearer-token example:
 ```bash
 read -r -s -p 'Prometheus token: ' PROMETHEUS_TOKEN
 export PROMETHEUS_TOKEN
-python "$TOOL_DIR/check_targets.py" --config "$CONFIG_PATH"
+python "$TOOL_DIR/prometheus_target_check.py" --config "$CONFIG_PATH"
 unset PROMETHEUS_TOKEN
 ```
 
 ```powershell
 $env:PROMETHEUS_TOKEN = Read-Host 'Prometheus token' -MaskInput
-py (Join-Path $ToolDir 'check_targets.py') --config $ConfigPath
+py (Join-Path $ToolDir 'prometheus_target_check.py') --config $ConfigPath
 Remove-Item Env:PROMETHEUS_TOKEN
 ```
 
@@ -105,7 +105,7 @@ The command is read-only. To test expectations without contacting Prometheus, sa
 
 ```bash
 RESPONSE_PATH="$HOME/prometheus-targets.json"
-python "$TOOL_DIR/check_targets.py" --config "$CONFIG_PATH" --input "$RESPONSE_PATH"
+python "$TOOL_DIR/prometheus_target_check.py" --config "$CONFIG_PATH" --input "$RESPONSE_PATH"
 ```
 
 ## Changes made

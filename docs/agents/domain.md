@@ -18,7 +18,7 @@ This is a single-context repo:
 ├── CONTEXT.md
 ├── docs/adr/
 │   └── 0001-example-decision.md
-├── monitoring/  windows/  linux/  automation/  utilities/
+├── monitoring/  fleet/  security/  maintenance/  utilities/
 └── ai-configs/
 ```
 

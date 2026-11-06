@@ -1,0 +1,5 @@
+# Tool manifest, read by tool_catalog.py at the repository root.
+# The batch file has no inputs, so it has no configurator or local config.
+help = []
+local_files = []
+configurator = false

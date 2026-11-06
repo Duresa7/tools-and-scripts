@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 TOOL_DIR = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = TOOL_DIR / "installer-signature-check.ps1"
+SCRIPT_PATH = TOOL_DIR / "Test-InstallerSignature.ps1"
 CONFIGURATOR_PATH = TOOL_DIR / "configure.ps1"
 EXAMPLE_CONFIG = TOOL_DIR / "config.example.json"
 

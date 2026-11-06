@@ -48,7 +48,7 @@ Tested status: Locally checked; live matrix pending.
 The configurator writes an ignored `config.local.toml` and refuses to overwrite an existing file without `--overwrite`. It never asks for the token and never writes one.
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/cloudflare-webhook-ranges"
+TOOL_DIR="$HOME/tools-and-scripts/security/cloudflare-webhook-ranges"
 python "$TOOL_DIR/configure.py" --list-name "GitHub Webhooks"
 ```
 
@@ -63,25 +63,25 @@ python "$TOOL_DIR/configure.py" --overwrite
 Bash:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/cloudflare-webhook-ranges"
+TOOL_DIR="$HOME/tools-and-scripts/security/cloudflare-webhook-ranges"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
 read -r -s -p "Cloudflare API token: " CLOUDFLARE_API_TOKEN; echo
 export CLOUDFLARE_API_TOKEN
-python "$TOOL_DIR/webhook_ranges.py" --config "$CONFIG_PATH" --dry-run
+python "$TOOL_DIR/cloudflare_webhook_ranges.py" --config "$CONFIG_PATH" --dry-run
 ```
 
 PowerShell:
 
 ```powershell
-$ToolDir = Join-Path $HOME "tools-and-scripts/automation/cloudflare-webhook-ranges"
+$ToolDir = Join-Path $HOME "tools-and-scripts/security/cloudflare-webhook-ranges"
 $ConfigPath = Join-Path $ToolDir "config.local.toml"
 Copy-Item (Join-Path $ToolDir "config.example.toml") $ConfigPath
 notepad $ConfigPath
 $Secure = Read-Host -Prompt "Cloudflare API token" -AsSecureString
 $env:CLOUDFLARE_API_TOKEN = [Net.NetworkCredential]::new("", $Secure).Password
-py (Join-Path $ToolDir "webhook_ranges.py") --config $ConfigPath --dry-run
+py (Join-Path $ToolDir "cloudflare_webhook_ranges.py") --config $ConfigPath --dry-run
 ```
 
 Review every `CUSTOMIZE:` marker.
@@ -91,9 +91,9 @@ Review every `CUSTOMIZE:` marker.
 Install the script, the configuration, and a root-only token file, then copy the two units from `systemd/` and adjust their `CUSTOMIZE:` lines:
 
 ```bash
-TOOL_DIR="$HOME/tools-and-scripts/automation/cloudflare-webhook-ranges"
+TOOL_DIR="$HOME/tools-and-scripts/security/cloudflare-webhook-ranges"
 sudo install -d -m 750 /etc/cloudflare-webhook-ranges
-sudo install -m 755 "$TOOL_DIR/webhook_ranges.py" /usr/local/bin/webhook_ranges.py
+sudo install -m 755 "$TOOL_DIR/cloudflare_webhook_ranges.py" /usr/local/bin/cloudflare_webhook_ranges.py
 sudo install -m 644 "$TOOL_DIR/config.local.toml" /etc/cloudflare-webhook-ranges/config.local.toml
 ( umask 077; read -r -s -p "Cloudflare API token: " T; echo; printf 'CLOUDFLARE_API_TOKEN=%s\n' "$T" | sudo tee /etc/cloudflare-webhook-ranges/token.env > /dev/null )
 sudo chmod 600 /etc/cloudflare-webhook-ranges/token.env
@@ -158,13 +158,13 @@ The process needs read access to the configuration, the token in its environment
 ## Dry run
 
 ```bash
-CLOUDFLARE_API_TOKEN="$TOKEN" python "$TOOL_DIR/webhook_ranges.py" --dry-run
+CLOUDFLARE_API_TOKEN="$TOKEN" python "$TOOL_DIR/cloudflare_webhook_ranges.py" --dry-run
 ```
 
 A dry run reads both sides, prints `would add [...], removed [...]` or `N ranges, no change`, sends no `PATCH`, and writes no metrics file. The metrics preview is separate:
 
 ```bash
-CLOUDFLARE_API_TOKEN="$TOKEN" python "$TOOL_DIR/webhook_ranges.py" --stdout
+CLOUDFLARE_API_TOKEN="$TOKEN" python "$TOOL_DIR/cloudflare_webhook_ranges.py" --stdout
 ```
 
 `--stdout` runs the real sync and prints the metrics instead of writing them.
@@ -192,7 +192,7 @@ Nothing else is touched: no list is created or deleted, no Access policy or appl
 sudo systemctl disable --now cloudflare-webhook-ranges.timer
 ```
 
-The list keeps whatever the last sync left in it; nothing needs restoring. To undo a specific sync, re-add the removed ranges by hand in the dashboard under Zero Trust, My Team, Lists. To remove the tool, delete `/usr/local/bin/webhook_ranges.py`, `/etc/cloudflare-webhook-ranges/`, the two units, and the `.prom` file, then revoke the token in the Cloudflare dashboard.
+The list keeps whatever the last sync left in it; nothing needs restoring. To undo a specific sync, re-add the removed ranges by hand in the dashboard under Zero Trust, My Team, Lists. To remove the tool, delete `/usr/local/bin/cloudflare_webhook_ranges.py`, `/etc/cloudflare-webhook-ranges/`, the two units, and the `.prom` file, then revoke the token in the Cloudflare dashboard.
 
 ## Troubleshooting
 

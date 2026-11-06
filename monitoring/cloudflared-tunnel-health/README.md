@@ -81,7 +81,7 @@ TOOL_DIR="$HOME/tools-and-scripts/monitoring/cloudflared-tunnel-health"
 CONFIG_PATH="$TOOL_DIR/config.local.toml"
 cp "$TOOL_DIR/config.example.toml" "$CONFIG_PATH"
 ${EDITOR:-vi} "$CONFIG_PATH"
-python "$TOOL_DIR/tunnel_health.py" --config "$CONFIG_PATH"
+python "$TOOL_DIR/cloudflared_tunnel_health.py" --config "$CONFIG_PATH"
 ```
 
 PowerShell:
@@ -91,7 +91,7 @@ $ToolDir = Join-Path $HOME "tools-and-scripts/monitoring/cloudflared-tunnel-heal
 $ConfigPath = Join-Path $ToolDir "config.local.toml"
 Copy-Item (Join-Path $ToolDir "config.example.toml") $ConfigPath
 notepad $ConfigPath
-py (Join-Path $ToolDir "tunnel_health.py") --config $ConfigPath
+py (Join-Path $ToolDir "cloudflared_tunnel_health.py") --config $ConfigPath
 ```
 
 Review and update every `CUSTOMIZE:` marker.
@@ -103,7 +103,7 @@ To schedule the health check every minute, install the script and configuration 
 ```bash
 TOOL_DIR="$HOME/tools-and-scripts/monitoring/cloudflared-tunnel-health"
 sudo install -d -m 755 /usr/local/bin /etc/cloudflared-tunnel-health
-sudo install -m 755 "$TOOL_DIR/tunnel_health.py" /usr/local/bin/tunnel_health.py
+sudo install -m 755 "$TOOL_DIR/cloudflared_tunnel_health.py" /usr/local/bin/cloudflared_tunnel_health.py
 sudo install -m 644 "$TOOL_DIR/config.local.toml" /etc/cloudflared-tunnel-health/config.local.toml
 ```
 
@@ -117,7 +117,7 @@ After=network-online.target
 [Service]
 Type=oneshot
 User=prometheus
-ExecStart=/usr/bin/python3 /usr/local/bin/tunnel_health.py --config /etc/cloudflared-tunnel-health/config.local.toml
+ExecStart=/usr/bin/python3 /usr/local/bin/cloudflared_tunnel_health.py --config /etc/cloudflared-tunnel-health/config.local.toml
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
@@ -199,7 +199,7 @@ The account requires:
 Use `--stdout` to preview generated Prometheus metrics without writing any files:
 
 ```bash
-python "$TOOL_DIR/tunnel_health.py" --stdout
+python "$TOOL_DIR/cloudflared_tunnel_health.py" --stdout
 ```
 
 When `--stdout` is passed, no temporary or permanent file is created on disk.
@@ -229,7 +229,7 @@ To remove exported metrics:
 systemctl disable --now cloudflared-tunnel-health.timer
 ```
 
-3. If installed to system paths, remove `/usr/local/bin/tunnel_health.py` and `/etc/cloudflared-tunnel-health`.
+3. If installed to system paths, remove `/usr/local/bin/cloudflared_tunnel_health.py` and `/etc/cloudflared-tunnel-health`.
 4. Remove `config.local.toml` if local settings are no longer needed.
 
 ## Troubleshooting

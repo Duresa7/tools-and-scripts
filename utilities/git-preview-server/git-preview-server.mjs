@@ -52,7 +52,7 @@ const OPTIONS = {
   help: { type: "boolean", short: "h" },
 };
 
-const USAGE = `Usage: node serve.mjs [--config PATH] [--root PATH] [--host ADDRESS]
+const USAGE = `Usage: node git-preview-server.mjs [--config PATH] [--root PATH] [--host ADDRESS]
                       [--port NUMBER] [--allow-non-loopback] [--dry-run]
 
 Serve the non-dotfile paths that git tracks in one working tree over HTTP so
@@ -481,7 +481,7 @@ async function main(argv) {
     }));
   } catch (error) {
     console.error(`error: ${error.message}`);
-    console.error("Run node serve.mjs --help for usage.");
+    console.error("Run node git-preview-server.mjs --help for usage.");
     return 1;
   }
   if (values.help) {

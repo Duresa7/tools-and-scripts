@@ -16,12 +16,12 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 SPEC_TH = importlib.util.spec_from_file_location(
-    "tunnel_health", MODULE_DIR / "tunnel_health.py"
+    "cloudflared_tunnel_health", MODULE_DIR / "cloudflared_tunnel_health.py"
 )
 assert SPEC_TH and SPEC_TH.loader
-tunnel_health = importlib.util.module_from_spec(SPEC_TH)
-sys.modules[SPEC_TH.name] = tunnel_health
-SPEC_TH.loader.exec_module(tunnel_health)
+cloudflared_tunnel_health = importlib.util.module_from_spec(SPEC_TH)
+sys.modules[SPEC_TH.name] = cloudflared_tunnel_health
+SPEC_TH.loader.exec_module(cloudflared_tunnel_health)
 
 SPEC_CFG = importlib.util.spec_from_file_location(
     "configure", MODULE_DIR / "configure.py"
@@ -31,15 +31,15 @@ configure = importlib.util.module_from_spec(SPEC_CFG)
 sys.modules[SPEC_CFG.name] = configure
 SPEC_CFG.loader.exec_module(configure)
 
-connections = tunnel_health.connections
-escape_label_value = tunnel_health.escape_label_value
-load_settings = tunnel_health.load_settings
-main = tunnel_health.main
-parse_settings = tunnel_health.parse_settings
-probe_origin = tunnel_health.probe_origin
-render_metrics = tunnel_health.render_metrics
-resolve_settings = tunnel_health.resolve_settings
-write_textfile = tunnel_health.write_textfile
+connections = cloudflared_tunnel_health.connections
+escape_label_value = cloudflared_tunnel_health.escape_label_value
+load_settings = cloudflared_tunnel_health.load_settings
+main = cloudflared_tunnel_health.main
+parse_settings = cloudflared_tunnel_health.parse_settings
+probe_origin = cloudflared_tunnel_health.probe_origin
+render_metrics = cloudflared_tunnel_health.render_metrics
+resolve_settings = cloudflared_tunnel_health.resolve_settings
+write_textfile = cloudflared_tunnel_health.write_textfile
 
 
 class MockServerHandler(BaseHTTPRequestHandler):
@@ -332,7 +332,7 @@ def test_configurator_writes_and_refuses_overwrite(tmp_path: Path) -> None:
 
 def test_cli_help() -> None:
     runner1 = subprocess.run(
-        [sys.executable, str(MODULE_DIR / "tunnel_health.py"), "--help"],
+        [sys.executable, str(MODULE_DIR / "cloudflared_tunnel_health.py"), "--help"],
         check=False,
         capture_output=True,
         text=True,

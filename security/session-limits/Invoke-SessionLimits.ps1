@@ -213,7 +213,7 @@ function Get-SessionTask {
 
 function Get-TaskArguments {
     param($Config)
-    '-NoProfile -NonInteractive -File "{0}\session-limits.ps1" -Mode Tick -ConfigPath "{0}\config.local.json" -Apply' -f $Config.StatePath
+    '-NoProfile -NonInteractive -File "{0}\Invoke-SessionLimits.ps1" -Mode Tick -ConfigPath "{0}\config.local.json" -Apply' -f $Config.StatePath
 }
 
 function Assert-OwnedTask {
@@ -230,7 +230,7 @@ function Install-SessionTask {
     New-ProtectedDirectory $Config.StatePath
     $registered = $false
     try {
-        $destination = Join-Path $Config.StatePath 'session-limits.ps1'
+        $destination = Join-Path $Config.StatePath 'Invoke-SessionLimits.ps1'
         Copy-Item -LiteralPath $SourcePath -Destination $destination -ErrorAction Stop
         Write-AtomicJson (Join-Path $Config.StatePath 'config.local.json') $Config
         Assert-ProtectedPath $destination
@@ -430,7 +430,7 @@ if ($MyInvocation.InvocationName -ne '.') {
     $ErrorActionPreference = 'Stop'
     try {
         if ($Help) {
-            Write-Output 'session-limits.ps1 -Mode Install|Uninstall|Status|Tick [-ConfigPath PATH] [-Apply] [-WhatIf]'
+            Write-Output 'Invoke-SessionLimits.ps1 -Mode Install|Uninstall|Status|Tick [-ConfigPath PATH] [-Apply] [-WhatIf]'
             Write-Output 'Parameters override explicit JSON config, then defaults. Install, Uninstall and Tick preview without -Apply.'
             exit 0
         }

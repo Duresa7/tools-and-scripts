@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from tunnel_health import (
+from cloudflared_tunnel_health import (
     DEFAULT_METRIC_PREFIX,
     DEFAULT_METRICS_URL,
     DEFAULT_OUTPUT_PATH,

@@ -1,0 +1,9 @@
+# Tool manifest, read by tool_catalog.py at the repository root.
+# check.py runs each help command; the repository tests confirm
+# git ignores each local file.
+
+help = [
+  ["configure.py", "--help"],
+  ["tests/validate_project.py", "--help"],
+]
+local_files = ["inventory/hosts.yml"]

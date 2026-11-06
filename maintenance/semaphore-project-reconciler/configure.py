@@ -9,7 +9,7 @@ import os
 import sys
 from pathlib import Path
 
-from reconcile_semaphore import (
+from semaphore_project_reconciler import (
     DEFAULT_CREDENTIAL_LOGIN,
     DEFAULT_MANIFEST,
     DEFAULT_PRIVATE_KEY_ENV,

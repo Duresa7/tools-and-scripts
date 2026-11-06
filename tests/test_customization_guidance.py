@@ -3,30 +3,39 @@ import subprocess
 import sys
 from pathlib import Path
 
+import tool_catalog
+
 ROOT = Path(__file__).resolve().parents[1]
 
+
+def tool_path(relative: str) -> str:
+    """Resolve "tool-name/file" to its current "category/tool-name/file" path."""
+    name, _, rest = relative.partition("/")
+    return f"{tool_catalog.tool(name, ROOT).relative}/{rest}"
+
+
 MARKER_COUNTS = {
-    "automation/ssh-key-rotation/identities/_identity-template.yml.example": 7,
-    "automation/ssh-key-rotation/inventory/hosts.yml.example": 37,
-    "linux/networkmanager-cutover/config.example.conf": 11,
-    "monitoring/prometheus-target-check/config.example.json": 10,
-    "automation/semaphore-sqlite-guard/config.example.toml": 4,
-    "automation/teamspeak-channel-migration/config.example.toml": 13,
+    tool_path("ssh-key-rotation/identities/_identity-template.yml.example"): 7,
+    tool_path("ssh-key-rotation/inventory/hosts.yml.example"): 37,
+    tool_path("networkmanager-cutover/config.example.conf"): 11,
+    tool_path("prometheus-target-check/config.example.json"): 10,
+    tool_path("semaphore-sqlite-guard/config.example.toml"): 4,
+    tool_path("teamspeak-channel-migration/config.example.toml"): 13,
 }
 
 HELP_CASES = (
     (
-        "monitoring/prometheus-target-check/check_targets.py",
+        tool_path("prometheus-target-check/prometheus_target_check.py"),
         ("--help",),
         ("local JSON configuration", "bearer-token environment variable"),
     ),
     (
-        "automation/semaphore-sqlite-guard/semaphore_sqlite.py",
+        tool_path("semaphore-sqlite-guard/semaphore_sqlite_guard.py"),
         ("backup", "--help"),
         ("overrides database_path", "must not exist"),
     ),
     (
-        "automation/teamspeak-channel-migration/teamspeak_channels.py",
+        tool_path("teamspeak-channel-migration/teamspeak_channel_migration.py"),
         ("export", "--help"),
         (
             "ClientQuery host",
@@ -34,18 +43,18 @@ HELP_CASES = (
         ),
     ),
     (
-        "automation/teamspeak-channel-migration/teamspeak_channels.py",
+        tool_path("teamspeak-channel-migration/teamspeak_channel_migration.py"),
         ("import", "--help"),
         ("target ServerQuery host", "environment variable containing your ServerQuery"),
     ),
 )
 
 TOOL_READMES = (
-    "automation/ssh-key-rotation/README.md",
-    "linux/networkmanager-cutover/README.md",
-    "monitoring/prometheus-target-check/README.md",
-    "automation/semaphore-sqlite-guard/README.md",
-    "automation/teamspeak-channel-migration/README.md",
+    tool_path("ssh-key-rotation/README.md"),
+    tool_path("networkmanager-cutover/README.md"),
+    tool_path("prometheus-target-check/README.md"),
+    tool_path("semaphore-sqlite-guard/README.md"),
+    tool_path("teamspeak-channel-migration/README.md"),
 )
 
 
@@ -58,7 +67,7 @@ def test_user_supplied_configuration_has_customize_markers() -> None:
 
 
 def test_ssh_inventory_marks_each_environment_owned_example_value() -> None:
-    path = ROOT / "automation/ssh-key-rotation/inventory/hosts.yml.example"
+    path = ROOT / tool_path("ssh-key-rotation/inventory/hosts.yml.example")
     lines = path.read_text(encoding="utf-8").splitlines()
     owned_fragments = (
         "-example:",
@@ -86,7 +95,7 @@ def test_ssh_inventory_marks_each_environment_owned_example_value() -> None:
 
 
 def test_prometheus_example_explains_its_placeholders() -> None:
-    path = ROOT / "monitoring/prometheus-target-check/config.example.json"
+    path = ROOT / tool_path("prometheus-target-check/config.example.json")
     payload = json.loads(path.read_text(encoding="utf-8"))
 
     assert payload["_comment"].startswith("CUSTOMIZE:")
@@ -128,9 +137,9 @@ def test_every_tool_readme_has_a_customization_section() -> None:
 
 def test_documented_commands_use_copied_local_configuration() -> None:
     prometheus_readme = (
-        ROOT / "monitoring/prometheus-target-check/README.md"
+        ROOT / tool_path("prometheus-target-check/README.md")
     ).read_text(encoding="utf-8")
-    ansible_readme = (ROOT / "automation/ssh-key-rotation/README.md").read_text(
+    ansible_readme = (ROOT / tool_path("ssh-key-rotation/README.md")).read_text(
         encoding="utf-8"
     )
 

@@ -70,7 +70,7 @@ Safety metadata:
 Run `configure.sh` to inspect local paths and create `config.local.conf`:
 
 ```bash
-TOOL_DIR="/usr/local/src/tools-and-scripts/linux/wazuh-hash-list-refresh"
+TOOL_DIR="/usr/local/src/tools-and-scripts/security/wazuh-hash-list-refresh"
 "$TOOL_DIR/configure.sh" --print-discovery
 "$TOOL_DIR/configure.sh"
 ```
@@ -82,7 +82,7 @@ The configurator inspects whether `/var/ossec/etc/lists` exists, checks for the 
 Copy `config.example.conf` to `config.local.conf` and adjust settings:
 
 ```bash
-TOOL_DIR="/usr/local/src/tools-and-scripts/linux/wazuh-hash-list-refresh"
+TOOL_DIR="/usr/local/src/tools-and-scripts/security/wazuh-hash-list-refresh"
 CONFIG_PATH="$TOOL_DIR/config.local.conf"
 cp "$TOOL_DIR/config.example.conf" "$CONFIG_PATH"
 chmod 600 "$CONFIG_PATH"
@@ -147,7 +147,7 @@ Command-line options:
 Run with `--dry-run` to test feed accessibility and parsing logic without modifying any files or restarting services:
 
 ```bash
-TOOL_DIR="/usr/local/src/tools-and-scripts/linux/wazuh-hash-list-refresh"
+TOOL_DIR="/usr/local/src/tools-and-scripts/security/wazuh-hash-list-refresh"
 "$TOOL_DIR/wazuh-hash-list-refresh.sh" --dry-run
 ```
 

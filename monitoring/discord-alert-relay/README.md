@@ -94,7 +94,7 @@ read -r -s -p "Discord bot token: " DISCORD_BOT_TOKEN
 export DISCORD_BOT_TOKEN
 echo
 
-python "$TOOL_DIR/alert_relay.py" --config "$CONFIG_PATH"
+python "$TOOL_DIR/discord_alert_relay.py" --config "$CONFIG_PATH"
 ```
 
 PowerShell (`Read-Host -MaskInput` requires PowerShell 7.1 or newer):
@@ -108,7 +108,7 @@ notepad $ConfigPath
 $env:ALERT_RELAY_SECRET = Read-Host "Grafana bearer secret" -MaskInput
 $env:DISCORD_BOT_TOKEN = Read-Host "Discord bot token" -MaskInput
 
-py (Join-Path $ToolDir "alert_relay.py") --config $ConfigPath
+py (Join-Path $ToolDir "discord_alert_relay.py") --config $ConfigPath
 ```
 
 Review and update every `CUSTOMIZE:` marker.
@@ -143,7 +143,7 @@ When deploying with Docker, the container runs under unprivileged system user `r
 Test configuration validity, environment variable presence, and Discord API reachability without starting the server:
 
 ```bash
-python "$TOOL_DIR/alert_relay.py" --config "$CONFIG_PATH" --dry-run
+python "$TOOL_DIR/discord_alert_relay.py" --config "$CONFIG_PATH" --dry-run
 ```
 
 If credentials and API checks succeed, the process prints readiness confirmation and exits with code 0.

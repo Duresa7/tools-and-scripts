@@ -9,7 +9,7 @@ import os
 import sys
 from pathlib import Path
 
-from semaphore_sqlite import DEFAULT_FILENAME_TEMPLATE, FILENAME_TEMPLATE_PATTERN
+from semaphore_sqlite_guard import DEFAULT_FILENAME_TEMPLATE, FILENAME_TEMPLATE_PATTERN
 
 
 def database_candidates() -> list[Path]:

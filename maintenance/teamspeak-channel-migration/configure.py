@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 
-from teamspeak_channels import (
+from teamspeak_channel_migration import (
     QueryError,
     SourceSettings,
     TargetSettings,

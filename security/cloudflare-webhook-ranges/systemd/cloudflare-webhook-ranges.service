@@ -8,7 +8,7 @@ Type=oneshot
 # CUSTOMIZE: A 0600 file holding one line, CLOUDFLARE_API_TOKEN=<token>.
 EnvironmentFile=/etc/cloudflare-webhook-ranges/token.env
 # CUSTOMIZE: Match the installed script and configuration paths.
-ExecStart=/usr/bin/python3 /usr/local/bin/webhook_ranges.py --config /etc/cloudflare-webhook-ranges/config.local.toml
+ExecStart=/usr/bin/python3 /usr/local/bin/cloudflare_webhook_ranges.py --config /etc/cloudflare-webhook-ranges/config.local.toml
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict

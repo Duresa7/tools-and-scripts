@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from webhook_ranges import (
+from cloudflare_webhook_ranges import (
     DEFAULT_API_URL,
     DEFAULT_LIST_NAME,
     DEFAULT_META_URL,
@@ -139,7 +139,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     print(f"configuration-written: {args.output}")
-    print(f"next-step: export {TOKEN_VARIABLE} and run webhook_ranges.py --dry-run")
+    print(
+        f"next-step: export {TOKEN_VARIABLE} and run "
+        "cloudflare_webhook_ranges.py --dry-run"
+    )
     return 0
 
 

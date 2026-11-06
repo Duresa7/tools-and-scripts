@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from grafana_dashboards import (
+from grafana_dashboard_check import (
     DEFAULT_TIMEOUT,
     DEFAULT_URL,
     VARIABLE_NAME,

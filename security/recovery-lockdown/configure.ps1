@@ -24,7 +24,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         # Dot-source in a child scope so its parameter block cannot reset inputs.
         $payload = & {
             param($InputConfig, $InputArguments)
-            . (Join-Path $PSScriptRoot 'recovery-lockdown.ps1')
+            . (Join-Path $PSScriptRoot 'Invoke-RecoveryLockdown.ps1')
             $local = Read-RecoveryConfig $InputConfig
             $overrides = @{}
             foreach ($key in (Get-RecoveryDefaults).Keys) {

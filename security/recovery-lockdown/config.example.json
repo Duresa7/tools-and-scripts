@@ -6,7 +6,7 @@
   "_comment_InstallRoot": "CUSTOMIZE: Choose a new dedicated directory outside the Windows directory, under an existing trusted parent.",
   "InstallRoot": "%ProgramData%\\WindowsRecoveryGuard",
   "_comment_ScriptName": "CUSTOMIZE: Choose the installed script filename.",
-  "ScriptName": "recovery-lockdown.ps1",
+  "ScriptName": "Invoke-RecoveryLockdown.ps1",
   "_comment_LogName": "CUSTOMIZE: Choose the log filename inside InstallRoot.",
   "LogName": "recovery.log",
   "_comment_DailyAt": "CUSTOMIZE: Set the daily local time in 24-hour HH:mm format.",

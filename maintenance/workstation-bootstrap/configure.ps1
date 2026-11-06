@@ -23,7 +23,7 @@ if ($MyInvocation.InvocationName -ne '.') {
             exit 0
         }
         $overrides = @{} + $PSBoundParameters
-        . (Join-Path $PSScriptRoot 'bootstrap-workstation.ps1')
+        . (Join-Path $PSScriptRoot 'Initialize-Workstation.ps1')
         $example = Join-Path $PSScriptRoot 'config.example.json'
         $resolved = Resolve-Configuration $example $overrides
         $payload = Get-Content -LiteralPath $example -Raw | ConvertFrom-Json

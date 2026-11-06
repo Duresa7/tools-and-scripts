@@ -74,7 +74,7 @@ Copy-Item (Join-Path $ToolDir 'config.example.json') $ConfigPath
 notepad $ConfigPath
 ```
 
-Replace `CUSTOMIZE:` values. Set `root` to an absolute path of a git working tree top level, or leave it empty to serve the git top level of whatever directory `serve.mjs` starts in.
+Replace `CUSTOMIZE:` values. Set `root` to an absolute path of a git working tree top level, or leave it empty to serve the git top level of whatever directory `git-preview-server.mjs` starts in.
 
 ## Inputs
 
@@ -103,7 +103,7 @@ POSIX:
 ```bash
 TOOL_DIR="$HOME/tools-and-scripts/utilities/git-preview-server"
 CONFIG_PATH="$TOOL_DIR/config.local.json"
-node "$TOOL_DIR/serve.mjs" --config "$CONFIG_PATH" --dry-run
+node "$TOOL_DIR/git-preview-server.mjs" --config "$CONFIG_PATH" --dry-run
 ```
 
 Windows PowerShell:
@@ -111,7 +111,7 @@ Windows PowerShell:
 ```powershell
 $ToolDir = Join-Path $HOME 'tools-and-scripts/utilities/git-preview-server'
 $ConfigPath = Join-Path $ToolDir 'config.local.json'
-node (Join-Path $ToolDir 'serve.mjs') --config $ConfigPath --dry-run
+node (Join-Path $ToolDir 'git-preview-server.mjs') --config $ConfigPath --dry-run
 ```
 
 The dry run prints the resolved repository root, listening URL, and count of servable tracked files.

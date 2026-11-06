@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 TOOL = Path(__file__).resolve().parents[1]
-ENTRY = TOOL / "bootstrap-workstation.ps1"
+ENTRY = TOOL / "Initialize-Workstation.ps1"
 CONFIGURATOR = TOOL / "configure.ps1"
 PWSH = shutil.which("pwsh") or str(Path.home() / ".local/bin/pwsh")
 
@@ -305,7 +305,7 @@ def test_configurator_non_overwrite_and_whatif(tmp_path):
     assert new_data["ComputerName"] == "REPLACED-WS"
 
 
-@pytest.mark.parametrize("script", ["configure.ps1", "bootstrap-workstation.ps1"])
+@pytest.mark.parametrize("script", ["configure.ps1", "Initialize-Workstation.ps1"])
 def test_help_and_dot_source_are_inert(script):
     result = run_ps(f"& {quote(TOOL / script)} -Help")
     assert result.returncode == 0

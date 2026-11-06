@@ -51,8 +51,8 @@ From this tool folder, create your local configuration:
 ```powershell
 .\configure.ps1 -ComputerName 'WS-WORKSTATION1'
 notepad .\config.local.json
-.\bootstrap-workstation.ps1 -ConfigPath .\config.local.json -WhatIf
-.\bootstrap-workstation.ps1 -ConfigPath .\config.local.json -ConfirmationPhrase 'BOOTSTRAP AND REBOOT'
+.\Initialize-Workstation.ps1 -ConfigPath .\config.local.json -WhatIf
+.\Initialize-Workstation.ps1 -ConfigPath .\config.local.json -ConfirmationPhrase 'BOOTSTRAP AND REBOOT'
 ```
 
 The configurator copies annotated example values into ignored `config.local.json`. Review every `CUSTOMIZE:` marker. It refuses to overwrite an existing file unless `-Force` is supplied. Use `-OutputPath` for a different destination.
@@ -102,7 +102,7 @@ Live bootstrap requires an elevated PowerShell session (Run as Administrator) be
 Preview planned actions and configuration without applying changes:
 
 ```powershell
-.\bootstrap-workstation.ps1 -ConfigPath .\config.local.json -WhatIf
+.\Initialize-Workstation.ps1 -ConfigPath .\config.local.json -WhatIf
 ```
 
 Dry run validates the computer name, verifies the public key (ensuring wire type matches header prefix and rejecting private keys or comment-only content), and validates the remote address scope before displaying planned actions. It outputs the effective JSON configuration and planned steps without making changes, without requiring elevation, and without requiring the confirmation phrase. Pure functions can be dot-sourced for isolated unit testing.
@@ -112,7 +112,7 @@ Dry run validates the computer name, verifies the public key (ensuring wire type
 After reviewing the preview, execute bootstrap from an elevated session:
 
 ```powershell
-.\bootstrap-workstation.ps1 -ConfigPath .\config.local.json -ConfirmationPhrase 'BOOTSTRAP AND REBOOT'
+.\Initialize-Workstation.ps1 -ConfigPath .\config.local.json -ConfirmationPhrase 'BOOTSTRAP AND REBOOT'
 ```
 
 Execution performs these steps:

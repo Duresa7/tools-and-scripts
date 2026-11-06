@@ -6,12 +6,12 @@ project:
     # CUSTOMIZE: Existing repository label.
     name: fleet-updates
     # CUSTOMIZE: Local checkout on the runner.
-    path: /srv/automation/fleet-updates
+    path: /srv/fleet/fleet-updates
   inventory:
     # CUSTOMIZE: Inventory label.
     name: fleet-hosts
     # CUSTOMIZE: Reviewed local inventory on the runner.
-    path: /srv/automation/fleet-updates/inventory/hosts.yml
+    path: /srv/fleet/fleet-updates/inventory/hosts.yml
     # CUSTOMIZE: Existing Semaphore credential reference, never a secret value.
     credential: fleet-ssh
   environment:

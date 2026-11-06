@@ -9,7 +9,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from teamspeak_probe import (
+from teamspeak_voice_probe import (
     DEFAULT_LOCAL_HOST,
     DEFAULT_TIMEOUT,
     parse_settings,

@@ -49,7 +49,7 @@ python -m pip install PyYAML
 python configure.py --url https://semaphore.example.net
 cp manifest.yml.example manifest.local.yml
 ${EDITOR:-vi} config.local.toml manifest.local.yml
-python reconcile_semaphore.py --config config.local.toml --check-manifests
+python semaphore_project_reconciler.py --config config.local.toml --check-manifests
 ```
 
 Replace every `CUSTOMIZE:` value. The manifest's playbook paths are examples; provide your own playbooks. Keep local manifests outside version control because they describe your environment.
@@ -67,7 +67,7 @@ Set the API token through a hidden prompt in Bash. The config stores only its va
 ```bash
 read -r -s -p 'Semaphore API token: ' SEMAPHORE_API_TOKEN
 export SEMAPHORE_API_TOKEN
-python reconcile_semaphore.py --config config.local.toml
+python semaphore_project_reconciler.py --config config.local.toml
 unset SEMAPHORE_API_TOKEN
 ```
 
@@ -103,27 +103,27 @@ An inventory login does not grant host elevation. Configure that separately in y
 Validate files without a token or network access:
 
 ```bash
-python reconcile_semaphore.py --config config.local.toml --check-manifests
+python semaphore_project_reconciler.py --config config.local.toml --check-manifests
 ```
 
 With the named token variable set, inspect remote drift:
 
 ```bash
-python reconcile_semaphore.py --config config.local.toml
-python reconcile_semaphore.py --config config.local.toml --prune
+python semaphore_project_reconciler.py --config config.local.toml
+python semaphore_project_reconciler.py --config config.local.toml --prune
 ```
 
 Both commands leave remote state unchanged. Planned changes return status 2. Extra retained objects alone don't count as drift. For a missing project, the plan reports creation and a template count; dependent objects are populated during apply.
 
 ## Changes made
 
-Before applying, take a verified backup. For SQLite deployments, follow [Semaphore SQLite guard](../../automation/semaphore-sqlite-guard/README.md). Preserve the matching Semaphore configuration and encryption settings with your recovery set.
+Before applying, take a verified backup. For SQLite deployments, follow [Semaphore SQLite guard](../../maintenance/semaphore-sqlite-guard/README.md). Preserve the matching Semaphore configuration and encryption settings with your recovery set.
 
 After reviewing the plan and preparing any needed private-key variable:
 
 ```bash
-python reconcile_semaphore.py --config config.local.toml --apply
-python reconcile_semaphore.py --config config.local.toml
+python semaphore_project_reconciler.py --config config.local.toml --apply
+python semaphore_project_reconciler.py --config config.local.toml
 ```
 
 The second command verifies the resulting managed fields by reading them again. Apply itself reports completed writes; it doesn't provide an atomic transaction or automatic final readback.
@@ -131,14 +131,14 @@ The second command verifies the resulting managed fields by reading them again. 
 Deleting unlisted templates and views requires both flags and the exact phrase:
 
 ```bash
-python reconcile_semaphore.py --config config.local.toml --apply --prune \
+python semaphore_project_reconciler.py --config config.local.toml --apply --prune \
   --confirm DELETE_UNLISTED_SEMAPHORE_OBJECTS
 ```
 
 Replacing stored SSH keys needs a separate confirmation:
 
 ```bash
-python reconcile_semaphore.py --config config.local.toml --apply --refresh-credential \
+python semaphore_project_reconciler.py --config config.local.toml --apply --refresh-credential \
   --confirm REPLACE_SEMAPHORE_SSH_CREDENTIALS
 ```
 

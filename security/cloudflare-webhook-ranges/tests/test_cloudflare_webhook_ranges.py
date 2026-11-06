@@ -17,12 +17,12 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 SPEC = importlib.util.spec_from_file_location(
-    "webhook_ranges", MODULE_DIR / "webhook_ranges.py"
+    "cloudflare_webhook_ranges", MODULE_DIR / "cloudflare_webhook_ranges.py"
 )
 assert SPEC and SPEC.loader
-webhook_ranges = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = webhook_ranges
-SPEC.loader.exec_module(webhook_ranges)
+cloudflare_webhook_ranges = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = cloudflare_webhook_ranges
+SPEC.loader.exec_module(cloudflare_webhook_ranges)
 
 SPEC_CFG = importlib.util.spec_from_file_location(
     "configure", MODULE_DIR / "configure.py"
@@ -32,8 +32,8 @@ configure = importlib.util.module_from_spec(SPEC_CFG)
 sys.modules[SPEC_CFG.name] = configure
 SPEC_CFG.loader.exec_module(configure)
 
-Settings = webhook_ranges.Settings
-TOKEN_VARIABLE = webhook_ranges.TOKEN_VARIABLE
+Settings = cloudflare_webhook_ranges.Settings
+TOKEN_VARIABLE = cloudflare_webhook_ranges.TOKEN_VARIABLE
 
 ACCOUNT = "0123456789abcdef0123456789abcdef"
 LIST_ID = "11111111-2222-3333-4444-555555555555"
@@ -135,7 +135,7 @@ def settings_for(api_base: str, **overrides: Any) -> Settings:
 
 
 def test_no_change_sends_no_patch(api: str) -> None:
-    result = webhook_ranges.sync(settings_for(api), "token", dry_run=False)
+    result = cloudflare_webhook_ranges.sync(settings_for(api), "token", dry_run=False)
     assert result.count == 3
     assert not result.changed
     assert FakeApi.patches == []
@@ -143,7 +143,7 @@ def test_no_change_sends_no_patch(api: str) -> None:
 
 def test_difference_is_one_patch_then_readback(api: str) -> None:
     FakeApi.items = {"192.0.2.0/24", "203.0.113.0/24"}
-    result = webhook_ranges.sync(settings_for(api), "token", dry_run=False)
+    result = cloudflare_webhook_ranges.sync(settings_for(api), "token", dry_run=False)
     assert result.appended == ("198.51.100.0/24", "2001:db8::/32")
     assert result.removed == ("203.0.113.0/24",)
     assert len(FakeApi.patches) == 1
@@ -156,7 +156,7 @@ def test_difference_is_one_patch_then_readback(api: str) -> None:
 
 def test_dry_run_reports_and_changes_nothing(api: str) -> None:
     FakeApi.items = {"192.0.2.0/24"}
-    result = webhook_ranges.sync(settings_for(api), "token", dry_run=True)
+    result = cloudflare_webhook_ranges.sync(settings_for(api), "token", dry_run=True)
     assert result.changed
     assert FakeApi.patches == []
     assert FakeApi.items == {"192.0.2.0/24"}
@@ -166,7 +166,7 @@ def test_short_answer_refuses_to_sync(api: str) -> None:
     FakeApi.hooks = ["192.0.2.0/24"]
     FakeApi.items = set()
     with pytest.raises(RuntimeError, match="fewer than the minimum"):
-        webhook_ranges.sync(settings_for(api), "token", dry_run=False)
+        cloudflare_webhook_ranges.sync(settings_for(api), "token", dry_run=False)
     assert FakeApi.patches == []
 
 
@@ -174,35 +174,38 @@ def test_readback_mismatch_fails(api: str) -> None:
     FakeApi.items = {"192.0.2.0/24"}
     FakeApi.readback_lies = True
     with pytest.raises(RuntimeError, match="after the update"):
-        webhook_ranges.sync(settings_for(api), "token", dry_run=False)
+        cloudflare_webhook_ranges.sync(settings_for(api), "token", dry_run=False)
 
 
 def test_account_is_discovered_from_the_token(api: str) -> None:
-    client = webhook_ranges.CloudflareLists(settings_for(api), "secret-token")
+    client = cloudflare_webhook_ranges.CloudflareLists(
+        settings_for(api), "secret-token"
+    )
     assert client.account_id == ACCOUNT
     assert "Bearer secret-token" in FakeApi.tokens
     FakeApi.accounts = [ACCOUNT, "another"]
     with pytest.raises(RuntimeError, match="sees 2 accounts"):
-        webhook_ranges.CloudflareLists(settings_for(api), "secret-token")
-    explicit = webhook_ranges.CloudflareLists(
+        cloudflare_webhook_ranges.CloudflareLists(settings_for(api), "secret-token")
+    explicit = cloudflare_webhook_ranges.CloudflareLists(
         settings_for(api, account_id=ACCOUNT), "secret-token"
     )
     assert explicit.account_id == ACCOUNT
 
 
 def test_ranges_are_normalised() -> None:
-    assert webhook_ranges.ipaddress.ip_network("192.0.2.5/24", strict=False)
+    assert cloudflare_webhook_ranges.ipaddress.ip_network("192.0.2.5/24", strict=False)
     FakeApi.hooks = ["192.0.2.5/24", "198.51.100.0/24", "2001:DB8::/32"]
     settings = Settings(minimum_ranges=1)
     normalised = {
-        str(webhook_ranges.ipaddress.ip_network(v, strict=False)) for v in FakeApi.hooks
+        str(cloudflare_webhook_ranges.ipaddress.ip_network(v, strict=False))
+        for v in FakeApi.hooks
     }
     assert normalised == {"192.0.2.0/24", "198.51.100.0/24", "2001:db8::/32"}
     assert settings.minimum_ranges == 1
 
 
 def test_metrics_render_and_atomic_write(tmp_path: Path) -> None:
-    body = webhook_ranges.render_metrics(
+    body = cloudflare_webhook_ranges.render_metrics(
         ok=True, count=9, changed=True, last_success=1700000000.0, now=1700000001.0
     )
     assert "cloudflare_webhook_ranges_last_run_ok 1" in body
@@ -210,12 +213,12 @@ def test_metrics_render_and_atomic_write(tmp_path: Path) -> None:
     assert "cloudflare_webhook_ranges_changed 1" in body
     assert "cloudflare_webhook_ranges_last_success_timestamp_seconds 1700000000.000"
     target = tmp_path / "nested" / "ranges.prom"
-    webhook_ranges.write_textfile(target, body)
+    cloudflare_webhook_ranges.write_textfile(target, body)
     assert target.read_text(encoding="utf-8") == body
     assert target.stat().st_mode & 0o777 == 0o644
     assert list(target.parent.iterdir()) == [target]
     with pytest.raises(ValueError, match=r"\.prom"):
-        webhook_ranges.write_textfile(tmp_path / "ranges.txt", body)
+        cloudflare_webhook_ranges.write_textfile(tmp_path / "ranges.txt", body)
 
 
 def test_failed_run_keeps_the_previous_success(
@@ -224,7 +227,7 @@ def test_failed_run_keeps_the_previous_success(
     target = tmp_path / "ranges.prom"
     monkeypatch.setenv(TOKEN_VARIABLE, "token")
     assert (
-        webhook_ranges.main(
+        cloudflare_webhook_ranges.main(
             [
                 "--meta-url",
                 f"{api}/meta",
@@ -236,19 +239,21 @@ def test_failed_run_keeps_the_previous_success(
         )
         == 0
     )
-    first = webhook_ranges.previous_success(target, "cloudflare_webhook_ranges")
+    first = cloudflare_webhook_ranges.previous_success(
+        target, "cloudflare_webhook_ranges"
+    )
     assert first > 0
     FakeApi.hooks = []
-    code = webhook_ranges.main(
+    code = cloudflare_webhook_ranges.main(
         ["--meta-url", f"{api}/meta", "--api-url", api, "--output", str(target)]
     )
     assert code == 1
     text = target.read_text(encoding="utf-8")
     assert "cloudflare_webhook_ranges_last_run_ok 0" in text
     assert "cloudflare_webhook_ranges_count -1" in text
-    assert webhook_ranges.previous_success(target, "cloudflare_webhook_ranges") == (
-        first
-    )
+    assert cloudflare_webhook_ranges.previous_success(
+        target, "cloudflare_webhook_ranges"
+    ) == (first)
 
 
 def test_missing_token_is_a_configuration_error(
@@ -256,7 +261,7 @@ def test_missing_token_is_a_configuration_error(
 ) -> None:
     monkeypatch.delenv(TOKEN_VARIABLE, raising=False)
     target = tmp_path / "never.prom"
-    code = webhook_ranges.main(["--output", str(target)])
+    code = cloudflare_webhook_ranges.main(["--output", str(target)])
     assert code == 1
     assert TOKEN_VARIABLE in capsys.readouterr().err
     assert not target.exists()
@@ -267,7 +272,7 @@ def test_stdout_writes_nothing(
 ) -> None:
     monkeypatch.setenv(TOKEN_VARIABLE, "token")
     target = tmp_path / "never.prom"
-    code = webhook_ranges.main(
+    code = cloudflare_webhook_ranges.main(
         [
             "--meta-url",
             f"{api}/meta",
@@ -304,7 +309,7 @@ metric_prefix = "custom"
 """,
         encoding="utf-8",
     )
-    settings = webhook_ranges.load_settings(config_file)
+    settings = cloudflare_webhook_ranges.load_settings(config_file)
     assert settings.meta_url == "http://127.0.0.1:9/meta"
     assert settings.api_url == "http://127.0.0.1:9"
     assert settings.account_id == "abc"
@@ -323,7 +328,7 @@ metric_prefix = "custom"
         timeout=12.0,
         output=tmp_path / "cli.prom",
     )
-    resolved = webhook_ranges.resolve_settings(cli)
+    resolved = cloudflare_webhook_ranges.resolve_settings(cli)
     assert resolved.meta_url == "http://127.0.0.1:9/meta"
     assert resolved.api_url == "http://127.0.0.1:10"
     assert resolved.list_name == "From CLI"
@@ -334,15 +339,19 @@ metric_prefix = "custom"
 
 def test_configuration_refuses_a_token() -> None:
     with pytest.raises(ValueError, match=TOKEN_VARIABLE):
-        webhook_ranges.parse_settings({"cloudflare": {"api_token": "x"}})
+        cloudflare_webhook_ranges.parse_settings({"cloudflare": {"api_token": "x"}})
     with pytest.raises(ValueError, match="TOML table"):
-        webhook_ranges.parse_settings([])
+        cloudflare_webhook_ranges.parse_settings([])
     with pytest.raises(ValueError, match="minimum_ranges"):
-        webhook_ranges.parse_settings({"github": {"minimum_ranges": 0}})
+        cloudflare_webhook_ranges.parse_settings({"github": {"minimum_ranges": 0}})
     with pytest.raises(ValueError, match="timeout_seconds"):
-        webhook_ranges.parse_settings({"cloudflare": {"timeout_seconds": -1}})
+        cloudflare_webhook_ranges.parse_settings(
+            {"cloudflare": {"timeout_seconds": -1}}
+        )
     with pytest.raises(ValueError, match=r"\.prom"):
-        webhook_ranges.parse_settings({"metrics": {"output_path": "/tmp/x.txt"}})
+        cloudflare_webhook_ranges.parse_settings(
+            {"metrics": {"output_path": "/tmp/x.txt"}}
+        )
 
 
 def test_configurator_writes_and_refuses_overwrite(tmp_path: Path) -> None:
@@ -361,13 +370,13 @@ def test_configurator_writes_and_refuses_overwrite(tmp_path: Path) -> None:
         == 0
     )
     assert configure.main(["--output", str(tmp_path / "bad.toml"), "--timeout", "0"])
-    settings = webhook_ranges.load_settings(target)
+    settings = cloudflare_webhook_ranges.load_settings(target)
     assert settings.list_name == "Hooks Two"
 
 
 def test_cli_help() -> None:
     for script, expected in (
-        ("webhook_ranges.py", TOKEN_VARIABLE),
+        ("cloudflare_webhook_ranges.py", TOKEN_VARIABLE),
         ("configure.py", "config.local.toml"),
     ):
         completed = subprocess.run(

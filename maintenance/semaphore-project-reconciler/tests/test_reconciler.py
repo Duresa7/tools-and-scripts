@@ -13,7 +13,7 @@ import pytest
 
 TOOL = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
-    "semaphore_project_reconciler", TOOL / "reconcile_semaphore.py"
+    "semaphore_project_reconciler", TOOL / "semaphore_project_reconciler.py"
 )
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -356,7 +356,7 @@ def test_configurator_non_overwrite_and_secret_exclusion(tmp_path, monkeypatch):
     assert output.read_text() == contents
 
 
-@pytest.mark.parametrize("script", ["reconcile_semaphore.py", "configure.py"])
+@pytest.mark.parametrize("script", ["semaphore_project_reconciler.py", "configure.py"])
 def test_help(script):
     result = subprocess.run(
         [sys.executable, str(TOOL / script), "--help"],

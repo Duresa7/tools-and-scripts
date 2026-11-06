@@ -14,7 +14,7 @@ import {
   parsePort,
   resolveRoot,
   validateHost,
-} from "./serve.mjs";
+} from "./git-preview-server.mjs";
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,14 +29,14 @@ const OPTIONS = {
 const USAGE = `Usage: node configure.mjs [--output PATH] [--root PATH] [--host ADDRESS]
                           [--port NUMBER]
 
-Write a local JSON configuration for serve.mjs. When --root is given, git must
+Write a local JSON configuration for git-preview-server.mjs. When --root is given, git must
 confirm it is the top level of a working tree. The configurator starts no
 server and refuses to replace an existing output file.
 
 Options:
   --output PATH    file to create (default: config.local.json beside this script)
   --root PATH      top level of the git working tree to serve; leave it out to
-                   serve the git top level of the directory serve.mjs starts in
+                   serve the git top level of the directory git-preview-server.mjs starts in
   --host ADDRESS   IP address to listen on (default: ${DEFAULT_HOST})
   --port NUMBER    TCP port, or 0 for any free port (default: ${DEFAULT_PORT})
   -h, --help       show this help
@@ -50,7 +50,7 @@ function configurationPayload({ root, host, port }) {
       "leave it empty to serve the git top level of the current directory.",
     root,
     _comment_host:
-      "CUSTOMIZE: Confirm the listen address. serve.mjs refuses a non-loopback " +
+      "CUSTOMIZE: Confirm the listen address. git-preview-server.mjs refuses a non-loopback " +
       "address unless --allow-non-loopback is given on the command line.",
     host,
     _comment_port: "CUSTOMIZE: Confirm the TCP port, or use 0 for any free port.",
@@ -117,11 +117,11 @@ async function main(argv) {
   console.log(`configuration-written: ${output}`);
   if (!isLoopbackAddress(settings.host)) {
     console.log(
-      `note: ${settings.host} is not a loopback address; serve.mjs refuses it ` +
+      `note: ${settings.host} is not a loopback address; git-preview-server.mjs refuses it ` +
         "unless you add --allow-non-loopback",
     );
   }
-  const serve = JSON.stringify(path.join(TOOL_DIR, "serve.mjs"));
+  const serve = JSON.stringify(path.join(TOOL_DIR, "git-preview-server.mjs"));
   console.log(`next-step: node ${serve} --config ${JSON.stringify(output)} --dry-run`);
   return 0;
 }

@@ -1,0 +1,10 @@
+# Tool manifest, read by tool_catalog.py at the repository root.
+# check.py runs each help command; the repository tests confirm
+# git ignores each local file.
+
+help = [
+  ["semaphore_sqlite_guard.py", "backup", "--help"],
+  ["semaphore_sqlite_guard.py", "compare", "--help"],
+  ["configure.py", "--help"],
+]
+local_files = ["config.local.toml"]

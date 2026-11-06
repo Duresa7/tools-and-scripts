@@ -48,7 +48,7 @@ Generate local configuration without replacing existing files:
 ```powershell
 .\configure.ps1
 notepad .\config.local.json
-.\installer-signature-check.ps1 -ConfigPath .\config.local.json
+.\Test-InstallerSignature.ps1 -ConfigPath .\config.local.json
 ```
 
 The configurator writes `config.local.json` with customizable example values and refuses to overwrite an existing file. Review every `CUSTOMIZE:` marker. Use `-OutputPath` to select another path, `-WhatIf` to preview the write, or `-Force` to overwrite if intended.

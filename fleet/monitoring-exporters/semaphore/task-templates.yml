@@ -6,12 +6,12 @@ project:
     # CUSTOMIZE: Review this local name or path before registering the template.
     name: monitoring-exporters
     # CUSTOMIZE: Review this local name or path before registering the template.
-    path: /srv/automation/monitoring-exporters
+    path: /srv/fleet/monitoring-exporters
   inventory:
     # CUSTOMIZE: Review this local name or path before registering the template.
     name: exporter-hosts
     # CUSTOMIZE: Review this local name or path before registering the template.
-    path: /srv/automation/monitoring-exporters/inventory/hosts.yml
+    path: /srv/fleet/monitoring-exporters/inventory/hosts.yml
     # CUSTOMIZE: Review this local name or path before registering the template.
     credential: exporter-ssh-key
   environment:

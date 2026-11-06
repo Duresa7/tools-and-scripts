@@ -6,9 +6,9 @@ Defaults to a read-only check. Install and uninstall require an exact Approval
 phrase. Use -WhatIf to preview. Configuration precedence is parameters, explicit
 JSON config, then defaults. Dot-sourcing defines functions without running them.
 .EXAMPLE
-.\recovery-lockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
+.\Invoke-RecoveryLockdown.ps1 -Install -ConfigPath .\config.local.json -WhatIf
 .EXAMPLE
-.\recovery-lockdown.ps1 -Install -ConfigPath .\config.local.json -Approval INSTALL_RECOVERY_LOCKDOWN
+.\Invoke-RecoveryLockdown.ps1 -Install -ConfigPath .\config.local.json -Approval INSTALL_RECOVERY_LOCKDOWN
 #>
 [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Check')]
 param(
@@ -34,7 +34,7 @@ function Get-RecoveryDefaults {
     @{
         TaskName = 'Windows Recovery Guard'; TaskPath = '\'
         InstallRoot = '%ProgramData%\WindowsRecoveryGuard'
-        ScriptName = 'recovery-lockdown.ps1'; LogName = 'recovery.log'
+        ScriptName = 'Invoke-RecoveryLockdown.ps1'; LogName = 'recovery.log'
         DailyAt = '03:00'; StartupDelaySeconds = 60
         VerificationTimeoutSeconds = 120
         ReagentcPath = '%SystemRoot%\System32\reagentc.exe'

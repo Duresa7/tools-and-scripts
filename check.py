@@ -14,27 +14,10 @@ import sys
 import tomllib
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-SSH_TOOL = ROOT / "automation" / "ssh-key-rotation"
-ANSIBLE_PROJECTS = (
-    "automation/ssh-key-rotation",
-    "automation/fleet-updates",
-    "automation/monitoring-exporters",
-    "automation/linux-access-baseline",
-)
-BASH_HELP_SCRIPTS = (
-    "linux/networkmanager-cutover/networkmanager-cutover.sh",
-    "linux/networkmanager-cutover/configure.sh",
-    "linux/proxmox-subscription-notice/proxmox-subscription-notice.sh",
-    "linux/proxmox-subscription-notice/configure.sh",
-    "linux/compose-service-update/compose-service-update.sh",
-    "linux/compose-service-update/configure.sh",
-    "monitoring/dnf-updates/dnf-updates-textfile.sh",
-    "monitoring/dnf-updates/configure.sh",
-    "linux/wazuh-hash-list-refresh/wazuh-hash-list-refresh.sh",
-    "linux/wazuh-hash-list-refresh/configure.sh",
-)
+import tool_catalog
+from tool_catalog import Tool
 
+ROOT = Path(__file__).resolve().parent
 INSTALL_HELP = {
     "python": "Install Python 3.11 or newer, then recreate the virtual environment.",
     "python-packages": (
@@ -43,10 +26,10 @@ INSTALL_HELP = {
     "linux-checkers": (
         "Install Bash and ShellCheck plus a Linux Python environment containing "
         "ansible-core and ansible-lint. On Windows, install them inside WSL. "
-        "Then install the collections from the SSH tool's requirements.yml."
+        "Then install the collections from each fleet/ project's requirements.yml."
     ),
     "ansible-collections": (
-        "Run from each Ansible project under automation/: "
+        "Run from each Ansible project under fleet/: "
         "ansible-galaxy collection install --requirements-file requirements.yml "
         "--collections-path .ansible/collections"
     ),
@@ -57,6 +40,22 @@ INSTALL_HELP = {
         "and add gitleaks to PATH."
     ),
 }
+
+
+def source_files(pattern: str) -> list[Path]:
+    """Repository files matching pattern, outside dot folders and node_modules.
+
+    Dot folders hold .git, .venv, and the Ansible collections each fleet project
+    installs under .ansible/; their vendored scripts are not ours to lint.
+    """
+    return sorted(
+        path
+        for path in ROOT.rglob(pattern)
+        if not any(
+            part.startswith(".") or part == "node_modules"
+            for part in path.relative_to(ROOT).parts[:-1]
+        )
+    )
 
 
 class CheckRunner:
@@ -129,10 +128,10 @@ def require_python_modules(runner: CheckRunner) -> bool:
 
 def parse_examples(runner: CheckRunner) -> None:
     try:
-        conf_files = sorted(ROOT.rglob("config.example.conf"))
-        json_files = sorted(ROOT.rglob("config.example.json"))
-        toml_files = sorted(ROOT.rglob("config.example.toml"))
-        yaml_files = sorted(ROOT.rglob("*.yml.example"))
+        conf_files = source_files("config.example.conf")
+        json_files = source_files("config.example.json")
+        toml_files = source_files("config.example.toml")
+        yaml_files = source_files("*.yml.example")
         for path in conf_files:
             seen: set[str] = set()
             for line_number, line in enumerate(
@@ -164,191 +163,36 @@ def parse_examples(runner: CheckRunner) -> None:
     runner.pass_check("Configuration example parsing")
 
 
-def check_python_help(runner: CheckRunner) -> None:
-    cases = (
-        (
-            "Prometheus validator help",
-            "monitoring/prometheus-target-check/check_targets.py",
-            ["--help"],
-        ),
-        (
-            "Prometheus configurator help",
-            "monitoring/prometheus-target-check/configure.py",
-            ["--help"],
-        ),
-        (
-            "Semaphore backup help",
-            "automation/semaphore-sqlite-guard/semaphore_sqlite.py",
-            ["backup", "--help"],
-        ),
-        (
-            "Semaphore configurator help",
-            "automation/semaphore-sqlite-guard/configure.py",
-            ["--help"],
-        ),
-        (
-            "Semaphore comparison help",
-            "automation/semaphore-sqlite-guard/semaphore_sqlite.py",
-            ["compare", "--help"],
-        ),
-        (
-            "TeamSpeak export help",
-            "automation/teamspeak-channel-migration/teamspeak_channels.py",
-            ["export", "--help"],
-        ),
-        (
-            "TeamSpeak import help",
-            "automation/teamspeak-channel-migration/teamspeak_channels.py",
-            ["import", "--help"],
-        ),
-        (
-            "TeamSpeak configurator help",
-            "automation/teamspeak-channel-migration/configure.py",
-            ["--help"],
-        ),
-        (
-            "SSH configurator help",
-            "automation/ssh-key-rotation/configure.py",
-            ["--help"],
-        ),
-        (
-            "SSH validator help",
-            "automation/ssh-key-rotation/tests/validate_project.py",
-            ["--help"],
-        ),
-        (
-            "Semaphore reconciler help",
-            "automation/semaphore-project-reconciler/reconcile_semaphore.py",
-            ["--help"],
-        ),
-        (
-            "Semaphore reconciler configurator help",
-            "automation/semaphore-project-reconciler/configure.py",
-            ["--help"],
-        ),
-        (
-            "UniFi flow collector help",
-            "monitoring/unifi-flow-collector/unifi_flow_collector.py",
-            ["--help"],
-        ),
-        (
-            "UniFi flow collector configurator help",
-            "monitoring/unifi-flow-collector/configure.py",
-            ["--help"],
-        ),
-        (
-            "Grafana layout check help",
-            "monitoring/grafana-dashboard-check/grafana_dashboards.py",
-            ["layout", "--help"],
-        ),
-        (
-            "Grafana query check help",
-            "monitoring/grafana-dashboard-check/grafana_dashboards.py",
-            ["queries", "--help"],
-        ),
-        (
-            "Grafana configurator help",
-            "monitoring/grafana-dashboard-check/configure.py",
-            ["--help"],
-        ),
-        (
-            "Minecraft probe help",
-            "monitoring/minecraft-status-probe/minecraft_status_probe.py",
-            ["--help"],
-        ),
-        (
-            "Minecraft configurator help",
-            "monitoring/minecraft-status-probe/configure.py",
-            ["--help"],
-        ),
-        (
-            "Tunnel health help",
-            "monitoring/cloudflared-tunnel-health/tunnel_health.py",
-            ["--help"],
-        ),
-        (
-            "Tunnel health configurator help",
-            "monitoring/cloudflared-tunnel-health/configure.py",
-            ["--help"],
-        ),
-        (
-            "TeamSpeak probe help",
-            "monitoring/teamspeak-voice-probe/teamspeak_probe.py",
-            ["--help"],
-        ),
-        (
-            "TeamSpeak probe configurator help",
-            "monitoring/teamspeak-voice-probe/configure.py",
-            ["--help"],
-        ),
-        (
-            "UniFi dashboards build help",
-            "monitoring/unifi-flow-dashboards/unifi_flow_dashboards.py",
-            ["build", "--help"],
-        ),
-        (
-            "UniFi dashboards verify help",
-            "monitoring/unifi-flow-dashboards/unifi_flow_dashboards.py",
-            ["verify", "--help"],
-        ),
-        (
-            "UniFi dashboards configurator help",
-            "monitoring/unifi-flow-dashboards/configure.py",
-            ["--help"],
-        ),
-        (
-            "Discord relay help",
-            "monitoring/discord-alert-relay/alert_relay.py",
-            ["--help"],
-        ),
-        (
-            "Discord relay configurator help",
-            "monitoring/discord-alert-relay/configure.py",
-            ["--help"],
-        ),
-        (
-            "Fleet updates configurator help",
-            "automation/fleet-updates/configure.py",
-            ["--help"],
-        ),
-        (
-            "Fleet updates validator help",
-            "automation/fleet-updates/tests/validate_project.py",
-            ["--help"],
-        ),
-        (
-            "Monitoring exporters configurator help",
-            "automation/monitoring-exporters/configure.py",
-            ["--help"],
-        ),
-        (
-            "Monitoring exporters validator help",
-            "automation/monitoring-exporters/tests/validate_project.py",
-            ["--help"],
-        ),
-        (
-            "Linux access baseline configurator help",
-            "automation/linux-access-baseline/configure.py",
-            ["--help"],
-        ),
-        (
-            "Linux access baseline validator help",
-            "automation/linux-access-baseline/tests/validate_project.py",
-            ["--help"],
-        ),
-    )
-    for name, relative_path, arguments in cases:
-        runner.command(name, [sys.executable, str(ROOT / relative_path), *arguments])
+def check_help(runner: CheckRunner, tools: list[Tool]) -> None:
+    """Run every Python and Node help command listed in the tool manifests.
+
+    Bash help commands run inside the Linux check script instead.
+    """
+    runtimes = {".py": (sys.executable, None), ".mjs": ("node", "node")}
+    for tool in tools:
+        for script, *arguments in tool.help_commands:
+            runtime = runtimes.get(Path(script).suffix)
+            if runtime is None:
+                continue
+            executable, install_key = runtime
+            runner.command(
+                f"{tool.relative} help: {script} {' '.join(arguments)}",
+                [executable, str(tool.path / script), *arguments],
+                install_key=install_key,
+            )
 
 
-def linux_check_script(root: str) -> str:
-    bash_files = [
-        str(path.relative_to(ROOT)).replace("\\", "/")
-        for path in sorted(ROOT.rglob("*.sh"))
-        if not {".git", ".venv"}.intersection(path.relative_to(ROOT).parts)
+def linux_check_script(root: str, tools: list[Tool]) -> str:
+    bash_files = [path.relative_to(ROOT).as_posix() for path in source_files("*.sh")]
+    bash_help = [
+        " ".join(shlex.quote(part) for part in (f"{tool.relative}/{script}", *args))
+        for tool in tools
+        for script, *args in tool.help_commands
+        if script.endswith(".sh")
     ]
+    ansible_projects = [tool.relative for tool in tools if tool.is_ansible_project]
     quoted_bash_files = " ".join(shlex.quote(path) for path in bash_files)
-    quoted_projects = " ".join(shlex.quote(path) for path in ANSIBLE_PROJECTS)
+    quoted_projects = " ".join(shlex.quote(path) for path in ansible_projects)
     extra_bin = os.environ.get("TOOLS_AND_SCRIPTS_WSL_BIN", "")
     collections = os.environ.get("TOOLS_AND_SCRIPTS_ANSIBLE_COLLECTIONS", "")
     lines = ["set -eu"]
@@ -364,10 +208,7 @@ def linux_check_script(root: str) -> str:
             f"cd {shlex.quote(root)}",
             f"bash -n {quoted_bash_files}",
             f"shellcheck {quoted_bash_files}",
-            *(
-                f"bash {shlex.quote(script)} --help >/dev/null"
-                for script in BASH_HELP_SCRIPTS
-            ),
+            *(f"bash {command} >/dev/null" for command in bash_help),
             "inventory=$(mktemp --suffix=.yml)",
             "trap 'rm -f \"$inventory\"' EXIT",
             f"for project in {quoted_projects}; do "
@@ -383,7 +224,7 @@ def linux_check_script(root: str) -> str:
     return "\n".join(lines)
 
 
-def run_linux_checks(runner: CheckRunner) -> None:
+def run_linux_checks(runner: CheckRunner, tools: list[Tool]) -> None:
     if os.name == "nt":
         wsl = shutil.which("wsl.exe")
         if wsl is None:
@@ -409,10 +250,10 @@ def run_linux_checks(runner: CheckRunner) -> None:
             "-e",
             "bash",
             "-lc",
-            linux_check_script(translated.stdout.strip()),
+            linux_check_script(translated.stdout.strip(), tools),
         ]
     else:
-        command = ["bash", "-lc", linux_check_script(str(ROOT))]
+        command = ["bash", "-lc", linux_check_script(str(ROOT), tools)]
     runner.command(
         "Bash, ShellCheck, Ansible lint, and Ansible syntax",
         command,
@@ -420,13 +261,13 @@ def run_linux_checks(runner: CheckRunner) -> None:
     )
 
 
-def powershell_parser_command(files: list[Path]) -> str:
+def powershell_parser_command(files: list[Path], ssh_tool: Path) -> str:
     quoted = ",".join("'" + str(path).replace("'", "''") + "'" for path in files)
-    common = str(SSH_TOOL / "playbooks" / "files" / "AuthorizedKey.Common.ps1").replace(
+    common = str(ssh_tool / "playbooks" / "files" / "AuthorizedKey.Common.ps1").replace(
         "'", "''"
     )
     templates = ",".join(
-        "'" + str(SSH_TOOL / "playbooks" / "files" / filename).replace("'", "''") + "'"
+        "'" + str(ssh_tool / "playbooks" / "files" / filename).replace("'", "''") + "'"
         for filename in ("Manage-AuthorizedKey.ps1", "Read-AuthorizedKeyState.ps1")
     )
     return (
@@ -448,8 +289,8 @@ def powershell_parser_command(files: list[Path]) -> str:
     )
 
 
-def run_powershell_checks(runner: CheckRunner) -> None:
-    files = sorted(ROOT.rglob("*.ps1"))
+def run_powershell_checks(runner: CheckRunner, ssh_tool: Path) -> None:
+    files = source_files("*.ps1")
     executable = "powershell.exe" if os.name == "nt" else "pwsh"
     runner.command(
         "PowerShell parsing",
@@ -458,37 +299,19 @@ def run_powershell_checks(runner: CheckRunner) -> None:
             "-NoProfile",
             "-NonInteractive",
             "-Command",
-            powershell_parser_command(files),
+            powershell_parser_command(files, ssh_tool),
         ],
         install_key="powershell",
     )
 
 
 def run_node_checks(runner: CheckRunner) -> None:
-    scripts = [
-        str(path)
-        for pattern in ("*.mjs", "*.js")
-        for path in sorted(ROOT.rglob(pattern))
-        if not {".git", ".venv", "node_modules"}.intersection(
-            path.relative_to(ROOT).parts
-        )
-    ]
-    for script in scripts:
-        name = Path(script).relative_to(ROOT).as_posix()
+    for path in (*source_files("*.mjs"), *source_files("*.js")):
         runner.command(
-            f"Node syntax {name}", ["node", "--check", script], install_key="node"
+            f"Node syntax {path.relative_to(ROOT).as_posix()}",
+            ["node", "--check", str(path)],
+            install_key="node",
         )
-    preview = ROOT / "utilities" / "git-preview-server"
-    runner.command(
-        "Git preview server help",
-        ["node", str(preview / "serve.mjs"), "--help"],
-        install_key="node",
-    )
-    runner.command(
-        "Git preview configurator help",
-        ["node", str(preview / "configure.mjs"), "--help"],
-        install_key="node",
-    )
 
 
 def run_gitleaks(runner: CheckRunner) -> None:
@@ -513,6 +336,19 @@ def main() -> int:
     else:
         runner.pass_check(f"Python {sys.version_info.major}.{sys.version_info.minor}")
 
+    try:
+        tools = tool_catalog.tools(ROOT)
+    except tool_catalog.ManifestError as exc:
+        runner.fail("Tool manifests", str(exc))
+        tools = []
+    else:
+        runner.pass_check(f"Tool manifests ({len(tools)} tools)")
+    ssh_tool = next(
+        (tool.path for tool in tools if tool.name == "ssh-key-rotation"), None
+    )
+    if ssh_tool is None and tools:
+        runner.fail("SSH key rotation tool", "fleet project not found")
+
     if require_python_modules(runner):
         runner.command("Ruff lint", [sys.executable, "-m", "ruff", "check", "."])
         runner.command(
@@ -527,29 +363,30 @@ def main() -> int:
                 "-m",
                 "compileall",
                 "-q",
+                "-x",
+                r"[\\/]\.",
                 str(ROOT / "check.py"),
+                str(ROOT / "tool_catalog.py"),
                 str(ROOT / "tests"),
-                str(ROOT / "automation"),
-                str(ROOT / "linux"),
-                str(ROOT / "monitoring"),
-                str(ROOT / "utilities"),
-                str(ROOT / "windows"),
+                *(str(ROOT / category) for category in tool_catalog.CATEGORIES),
             ],
         )
         parse_examples(runner)
-        check_python_help(runner)
-        runner.command(
-            "SSH project validator",
-            [
-                sys.executable,
-                str(SSH_TOOL / "tests" / "validate_project.py"),
-                "--inventory",
-                "hosts.yml.example",
-            ],
-        )
+        check_help(runner, tools)
+        if ssh_tool is not None:
+            runner.command(
+                "SSH project validator",
+                [
+                    sys.executable,
+                    str(ssh_tool / "tests" / "validate_project.py"),
+                    "--inventory",
+                    "hosts.yml.example",
+                ],
+            )
 
-    run_linux_checks(runner)
-    run_powershell_checks(runner)
+    run_linux_checks(runner, tools)
+    if ssh_tool is not None:
+        run_powershell_checks(runner, ssh_tool)
     run_node_checks(runner)
     run_gitleaks(runner)
 
