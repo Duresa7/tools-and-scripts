@@ -17,7 +17,7 @@ from e2b import Sandbox
 sbx = Sandbox.create("<template>", timeout=1800,
                      network={"deny_out": ["0.0.0.0/0"], "allow_out": ["pypi.org", "files.pythonhosted.org"]})
 try:
-    print(sbx.commands.run("pip install <package>").stdout)
+    print(sbx.commands.run("python3 -m venv /home/user/.venv && /home/user/.venv/bin/pip install <package>").stdout)
 finally:
     sbx.kill()
 ```
@@ -41,7 +41,7 @@ finally:
     sbx.kill()
 ```
 
-`language="javascript"` (or `r`, `java`, `bash`) on `run_code` picks another kernel. A file the code needs goes in with `sbx.files.write(path, data)`.
+`language="javascript"` (also `ts` and `bash`; E2B's stock template adds `r` and `java`) on `run_code` picks another kernel. When `require` is undefined in the JavaScript kernel, the template runs Deno's kernel: load modules with `import fs from "node:fs"` and npm packages with `import x from "npm:<package>"`. A file the code needs goes in with `sbx.files.write(path, data)`.
 
 ## Driving a desktop (Desktop)
 

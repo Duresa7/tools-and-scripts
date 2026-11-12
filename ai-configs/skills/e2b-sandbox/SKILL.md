@@ -27,6 +27,8 @@ A sandbox is a **throwaway** Linux microVM: its own disk, processes and network,
 
 **Disk.** Keep large downloads and builds under `/home/user`: `/tmp` is usually a small in-memory filesystem. `df -h /` inside shows the space a template leaves free.
 
+**Packages.** `sudo apt-get install -y <package>` adds system packages. Ubuntu-based templates refuse system-wide `pip` installs, so Python packages go in a virtual environment: `python3 -m venv /home/user/.venv && /home/user/.venv/bin/pip install <package>`, or `uv venv` then `uv pip install <package>` where `uv` is present.
+
 **Limits.** A create that answers `400: Timeout cannot be greater than N hours` has hit the deployment's lifetime cap; lower `--timeout`. `503: not enough capacity` or `Failed to place sandbox` means the host is full or busy: retry after a few seconds, after killing sandboxes you no longer need.
 
 **Long jobs.** `e2b sandbox exec -b "$ID" '<command> > /home/user/job.log 2>&1' < /dev/null` starts work in the background and returns at once; check on it with a later `exec` that reads the log. For work that spans sessions, create with `--lifecycle.ontimeout pause --lifecycle.autoresume`: the sandbox pauses at its timeout with memory and files intact, and the next command against its ID resumes it. A paused sandbox still holds disk on the host, so kill it once the work is finished.
