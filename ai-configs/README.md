@@ -15,6 +15,7 @@ guidance/   Notes that an agent can read, for example how to select a model and 
 |---|---|
 | [`1password-cli`](skills/1password-cli/SKILL.md) | Uses the 1Password CLI (`op`) and keeps secret values out of the agent output. |
 | [`orchestrate`](skills/orchestrate/SKILL.md) | Turns the agent into an orchestrator that plans, delegates to headless Codex, Claude Code, and Antigravity workers, verifies, retries, and reports once. Accounts and models come from a gitignored `config.local.toml`; see `config.example.toml`. |
+| [`e2b-sandbox`](skills/e2b-sandbox/SKILL.md) | Runs untrusted or unfamiliar code in throwaway E2B sandboxes (Firecracker microVMs) through the `e2b` CLI, and builds E2B templates; bash and PowerShell. Each machine needs the CLI and three environment variables first: [SETUP.md](skills/e2b-sandbox/SETUP.md). |
 
 ## Install a skill
 
@@ -39,7 +40,7 @@ New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills" | Out-Null
 New-Item -ItemType SymbolicLink -Path "$HOME\.claude\skills\1password-cli" -Target "$PWD\skills\1password-cli"
 ```
 
-Repeat with `orchestrate` in place of `1password-cli` for the orchestrate skill. That skill also needs a `config.local.toml` next to its `SKILL.md`: copy `config.example.toml`, list the CLI logins on your machine, and keep the file out of git (the repository already ignores it).
+Repeat with `orchestrate` or `e2b-sandbox` in place of `1password-cli` for those skills. `e2b-sandbox` also needs the `e2b` CLI and its environment variables on the machine; [its SETUP.md](skills/e2b-sandbox/SETUP.md) walks through the whole setup on macOS, Linux and Windows. That skill also needs a `config.local.toml` next to its `SKILL.md`: copy `config.example.toml`, list the CLI logins on your machine, and keep the file out of git (the repository already ignores it).
 
 ## License
 
