@@ -32,7 +32,7 @@ e2b --version
 
 `E2B_SANDBOX_URL` matters for self-hosted setups. Without it, the CLI and SDK address every sandbox as `<port>-<sandbox id>.<domain>`, which needs wildcard DNS. With it, they send all sandbox traffic to one host and name the sandbox in request headers.
 
-My homelab's values ([E2B on e2b-01](https://github.com/Duresa7/Homelab/tree/main/Platforms/E2B)):
+My homelab's values (retired 2026-11-17; [E2B on e2b-01](https://github.com/Duresa7/Homelab/tree/main/Archive/Platforms/E2B)):
 
 ```
 E2B_DOMAIN=e2b.alphasecunited.com
