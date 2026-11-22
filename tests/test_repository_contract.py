@@ -4,7 +4,6 @@ from pathlib import Path
 import tool_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
-AGENT_CONFIGS = ROOT / "ai-configs"
 
 TOOLS = tool_catalog.tools(ROOT)
 
@@ -25,7 +24,6 @@ README_SECTIONS = (
 
 LOCAL_CONFIGS = (
     *(f"{tool.relative}/{name}" for tool in TOOLS for name in tool.local_files),
-    "ai-configs/skills/orchestrate/config.local.toml",
 )
 
 
@@ -123,9 +121,6 @@ def test_repository_text_omits_process_and_environment_labels() -> None:
     )
     findings: list[str] = []
     for path in tracked_files():
-        # Agent configs name the agents they configure.
-        if path.is_relative_to(AGENT_CONFIGS):
-            continue
         if path.suffix.lower() not in {
             ".conf",
             ".example",

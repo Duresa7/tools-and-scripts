@@ -18,8 +18,7 @@ This is a single-context repo:
 ├── CONTEXT.md
 ├── docs/adr/
 │   └── 0001-example-decision.md
-├── monitoring/  fleet/  security/  maintenance/  utilities/
-└── ai-configs/
+└── monitoring/  fleet/  security/  maintenance/  utilities/
 ```
 
 ## Use the glossary's vocabulary
