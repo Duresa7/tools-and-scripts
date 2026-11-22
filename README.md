@@ -59,7 +59,7 @@ Each tool sits in one folder, chosen by the job it does:
 
 The platform each tool runs on is listed in [Status and safety](#status-and-safety). Each tool's main script is named after its folder, for example `prometheus_target_check.py` in `prometheus-target-check/`. PowerShell scripts use Verb-Noun names instead, for example `Test-InstallerSignature.ps1`.
 
-The [`ai-configs/`](ai-configs/README.md) folder holds skills and guidance files for AI coding agents. It isn't a tool folder, so the tool rules and checks below don't apply to it.
+Skills and guidance files for AI coding agents moved to [ai-workflow](https://github.com/Duresa7/ai-workflow).
 
 ### Monitoring
 
